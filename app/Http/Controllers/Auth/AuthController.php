@@ -26,22 +26,7 @@ class AuthController extends Controller
 
     use AuthenticatesAndRegistersUsers, ThrottlesLogins;
 
-    public function authenticate(Request $request)
-    {
-        $creditionals = $request->only('email', 'password');
 
-        try {
-            if (!$token = JWTAuth::attempt($creditionals)) {
-                $this->response->json(['error' => 'User email or password as no correct'], 401);
-            }
-
-        } catch (JWTException $exception) {
-            return $this->response->json(['error' => 'Something was wrong'], 500);
-        }
-
-        return $this->response->json(compact('token'));
-
-    }
 
 
     /**
