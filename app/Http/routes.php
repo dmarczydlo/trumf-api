@@ -15,5 +15,23 @@ Route::get('/', function () {
     return view('welcome');
 });
 
+Route::group(['prefix' => 'api'], function () {
+    Route::get('login', 'UsersController@login');
+});
 
-Route::get('login', 'UsersController@login');
+Route::group(['prefix' => 'api', 'middleware' => ['jwt.auth','jwt.refresh']], function () {
+
+    Route::get('logout', 'UsersController@logout');
+});
+
+
+Route::group(['prefix' => 'api/user', 'middleware' => 'jwt.auth'], function () {
+
+    Route::get('read/{user_id}', 'UsersController@read');
+    Route::delete('delete/{user_id}', 'UsersController@delete');
+    Route::post('update', 'UsersController@update');
+    Route::put('create', 'UsersController@create');
+    Route::get('all', 'UsersController@getUsers');
+
+
+});

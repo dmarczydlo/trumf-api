@@ -2,13 +2,19 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 
 use App\Http\Requests;
+use League\Flysystem\Exception;
 use Tymon\JWTAuth\Exceptions\JWTException;
 use Tymon\JWTAuth\Facades\JWTAuth;
+use Tymon\JWTAuth\JWTGuard;
+use Illuminate\Support\Facades\Auth;
+use App\User;
+use Illuminate\Support\Facades\Hash;
 
-class Users extends Controller
+class UsersController extends Controller
 {
     //
 
@@ -20,7 +26,7 @@ class Users extends Controller
         try {
             if (!$token = JWTAuth::attempt($creditionals)) {
 
-              return  response()->json(['error' => 'User email or password as no correct'], 401);
+                return response()->json(['error' => 'User email or password as no correct'], 401);
             }
 
         } catch (JWTException $exception) {
@@ -34,22 +40,58 @@ class Users extends Controller
 
     public function logout()
     {
+//        JWTGuard::logout();
+
+
         return response()->json([
-            'action' => 'logout'
+            'success' => true
         ]);
     }
 
-    public function create()
+    public function create(Request $request)
     {
-        return response()->json([
-            'action' => 'create'
-        ]);
+
+        $user_data = $request->only('email', 'password', 'name', 'group_id', 'surname', 'level');
+
+        if (!empty($user_data)) {
+            try {
+
+
+//                print_r($user_data); exit();
+                $find_user = User::where('email', '=', $user_data['email'])->first();
+                if (empty($find_user)) {
+                    $user_data['password'] = Hash::make($user_data['password']);
+                    $user = User::create($user_data);
+
+                    return response()->json([
+                        'user' => $user
+                    ]);
+                } else {
+                    return response()->json(['error' => 'Email is exist'], 401);
+                }
+            } catch (QueryException $exception) {
+                return response()->json(['error' => 'exception' . $exception->getMessage()], 401);
+            }
+        } else {
+            return response()->json(['error' => 'User email or password as no correct'], 401);
+        }
     }
 
     public function delete($user_id)
     {
+        if ($user_id > 0) {
+            $find_user = User::find($user_id);
+            if (!empty($find_user)) {
+                if ($find_user->delete()) {
+                    return response()->json([
+                        'success' => true
+                    ]);
+                }
+            }
+        }
+
         return response()->json([
-            'action' => 'delete'
+            'success' => false
         ]);
     }
 
@@ -60,10 +102,22 @@ class Users extends Controller
         ]);
     }
 
+    public function getUsers()
+    {
+        $users = User::all();
+        return response()->json([
+            'users' => $users
+        ]);
+    }
+
     public function read($user_id)
     {
+
+        $user = User::find($user_id);
+
+
         return response()->json([
-            'action' => 'read'
+            'user' => $user
         ]);
     }
 }
