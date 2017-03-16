@@ -17,6 +17,9 @@ class CreateTasks extends Migration
             $table->string('name', 20)->notNullable();
             $table->integer('status')->nullable();
             $table->integer('prio')->notNullable();
+            $table->integer('time_to_do')->notNullable();
+            $table->integer('min_lvl')->notNullable();
+
             $table->timestamps();
         });
     }

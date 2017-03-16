@@ -27,7 +27,7 @@ class User extends Authenticatable
 
     public function tasks()
     {
-        return $this->belongsToMany('App\Task', 'user_task')->withPivot('task_start', 'task_stop', 'status', 'schedule_day', 'status', 'accept', 'section');
+        return $this->belongsToMany('App\Task', 'user_task')->withPivot('status', 'schedule_day', 'status', 'accept', 'section','order_num');
     }
 
     public function group()

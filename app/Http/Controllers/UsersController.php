@@ -28,12 +28,12 @@ class UsersController extends Controller
         try {
             if (!$token = JWTAuth::attempt($creditionals)) {
 
-                return response()->json(['error' => 'User email or password as no correct'], 401);
+                return response()->json(['error' => 'Email lub hasła są nieprawidłowe'], 401);
             }
 
         } catch (JWTException $exception) {
 
-            return response()->json(['error' => 'Something was wrong'], 500);
+            return response()->json(['error' => 'Wystąpił błą'], 500);
         }
 
 
@@ -80,7 +80,7 @@ class UsersController extends Controller
                             'user' => $user
                         ]);
                     } else {
-                        return response()->json(['error' => 'Some of data is not correctly'], 401);
+                        return response()->json(['error' => 'Brak wymaganych danych'], 401);
                     }
 
                 } else {
@@ -90,7 +90,7 @@ class UsersController extends Controller
                 return response()->json(['error' => 'exception' . $exception->getMessage()], 401);
             }
         } else {
-            return response()->json(['error' => 'User email or password as no correct'], 401);
+            return response()->json(['error' => 'Email lub hasło są nieprawidłowe'], 401);
         }
     }
 
@@ -156,7 +156,7 @@ class UsersController extends Controller
                 'user' => $user
             ]);
         } else {
-            return response()->json(['error' => 'Some of data is not correctly'], 401);
+            return response()->json(['error' => 'Brak wymaganych danych'], 401);
         }
     }
 

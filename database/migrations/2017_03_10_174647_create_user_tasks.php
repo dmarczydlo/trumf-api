@@ -21,7 +21,7 @@ class CreateUserTasks extends Migration
             $table->integer('accept')->default(0)->notNullable();
             $table->date('schedule_day')->notNullable();
             $table->string('section', 20)->notNullable();
-
+            $table->integer('order_num ')->notNullable();
             $table->timestamps();
         });
     }
