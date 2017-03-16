@@ -16,8 +16,8 @@ class CreateTaskTime extends Migration
             $table->increments('id');
             $table->integer('user_task_id')->unsigned()->references('id')->inTable('user_task')->onDelete('CASCADE');
             $table->integer('task_id')->unsigned()->references('id')->inTable('tasks')->onDelete('CASCADE');
-            $table->datetime('task_start')->nullable();
-            $table->datetime('task_stop')->nullable();
+            $table->datetime('date_start')->nullable();
+            $table->datetime('date_stop')->nullable();
             $table->integer('time')->nullable();
             $table->string('section', 20)->notNullable();
         });

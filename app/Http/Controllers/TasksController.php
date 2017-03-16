@@ -7,8 +7,10 @@ use App\UserTask;
 use Illuminate\Http\Request;
 use App\Task;
 use App\User;
-
+use Validator;
 use App\Http\Requests;
+use Illuminate\Support\Facades\DB;
+use App;
 
 class TasksController extends Controller
 {
@@ -40,8 +42,6 @@ class TasksController extends Controller
         ]);
 
     }
-
-
 
 
     public function readTasksForUserAtDay($user_id, $day)
@@ -88,13 +88,13 @@ class TasksController extends Controller
 
                 $limit = DB::table('task_time')
                     ->join('user_task', 'user_task.id', '=', 'task_time.user_task_id')
-                    ->select('SUM(time)')
+                    ->select(DB::raw('SUM(time) as time'))
                     ->where('schedule_day', $data['schedule_day'])
                     ->where('user_id', $data['user_id'])
                     ->groupBy('user_task.task_id')
                     ->get();
 
-                if ($limit + $task->time <= App::environment('BASIC_TIME') + App::environment('EXTRA_TIME')) {
+                if ($limit['time'] + $task->time <= App::environment('BASIC_TIME') + App::environment('EXTRA_TIME')) {
 
 
                     $section = $user->group->name;
@@ -118,9 +118,9 @@ class TasksController extends Controller
     public
     function startTask(Request $request)
     {
-        $data = $request->only('date_start', 'task_id', 'section', 'user_task_id');
+        $data = $request->only('task_id', 'section', 'user_task_id');
+
         $validator = Validator::make($data, [
-            'date_start' => 'required|datetime',
             'task_id' => 'required|numeric',
             'user_task_id' => 'required|numeric',
             'section' => 'required'
@@ -128,34 +128,48 @@ class TasksController extends Controller
 
         if (!$validator->fails()) {
 
+
+            $data['date_start'] = date('Y-m-d H:i:s');
+            $user_task = DB::table('user_task')
+                ->select('user_id')
+                ->where('id', $data['user_task_id'])
+                ->first();
+
             $now = date('Y-m-d');
             $limit = DB::table('task_time')
                 ->join('user_task', 'user_task.id', '=', 'task_time.user_task_id')
-                ->select('SUM(time)')
+                ->select(DB::raw('SUM(time) as time'))
                 ->where('schedule_day', $now)
-                ->where('user_id', $data['user_id'])
+                ->where('user_id', $user_task->user_id)
                 ->groupBy('user_task.task_id')
-                ->get();
+                ->first();
+
 
             $task = Task::find($data['task_id']);
-
-            if ($limit + $task->time <= App::environment('BASIC_TIME') + App::environment('EXTRA_TIME')) {
-
-
-                $data = $request->only('date_start', 'task_id', 'section');
-                $data['status'] = 2;
-                $task_time = TaskTime::create($data);
+            if ($task) {
 
 
-                //update global task status
-                $task = Task::find($data['task_id']);
-                $task->status = 2;
-                $task->save();
-                return response()->json([
-                    'time' => $task_time
-                ]);
+                if (($limit['time'] + $task->time) <= App::environment('BASIC_TIME') + App::environment('EXTRA_TIME')) {
+
+                    $task_time = TaskTime::create($data);
+
+//                    $task_time->save();
+
+                    //update global task status
+
+
+                    $task = Task::find($data['task_id']);
+                    $task->status = 2;
+                    $task->save();
+                    return response()->json([
+                        'time' => $task_time
+                    ]);
+                } else {
+                    return response()->json(['error' => 'Przekroczyłeś swój dzienny limit. Nie można uruchomić tego zadania'], 401);
+
+                }
             } else {
-                return response()->json(['error' => 'Przekroczyłeś swój dzienny limit. Nie można uruchomić tego zadania'], 401);
+                return response()->json(['error' => 'Zadanie nie istnieje'], 401);
 
             }
 
@@ -170,22 +184,28 @@ class TasksController extends Controller
 
         $data = $request->only('id');
         $validator = Validator::make($data, [
-            'id' => 'required|datetime',
+            'id' => 'required|numeric',
         ]);
 
         if (!$validator->fails()) {
 
             $data_stop = date('Y-m-d H:i:s');
             $task = TaskTime::find($data['id']);
-            $data_task = $data;
-            $data_task['time'] = strtotime($data_stop) - strtotime($task->date_start);
+            if ($task) {
+                $data_task = $data;
+                $data_task['date_stop'] = $data_stop;
+                $data_task['time'] = strtotime($data_stop) - strtotime($task->date_start);
 
-            $task_time = User::updateOrCreate(['task_id' => $data['task_id'], 'user_task_id' => $data['user_task_id'], 'section' => $data['section'], 'date_start' => $data['date_start']], $data_task);
-            $task_time->save();
+                $id = $data['id'];
+                $task_time = TaskTime::updateOrCreate(['id' => $id], $data_task);
+                $task_time->save();
 
-            return response()->json([
-                'time' => $task_time
-            ]);
+                return response()->json([
+                    'time' => $task_time
+                ]);
+            } else {
+                return response()->json(['error' => 'Zadanie nie istnieje'], 401);
+            }
         } else {
             return response()->json(['error' => 'Brak wymaganych danych'], 401);
         }
@@ -197,7 +217,7 @@ class TasksController extends Controller
         //id - task_time_id
         $data = $request->only('id');
         $validator = Validator::make($data, [
-            'id' => 'required|datetime',
+            'id' => 'required|numeric',
         ]);
 
         if (!$validator->fails()) {

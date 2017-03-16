@@ -42,5 +42,8 @@ Route::group(['prefix' => 'api/task', 'middleware' => 'jwt.auth'], function () {
     Route::get('get_new', 'TasksController@readAllNewTask');
     Route::get('user_at_day/{user_id}/{day}', 'TasksController@readTasksForUserAtDay');
     Route::post('set_task', 'TasksController@setTaskToUser');
+    Route::post('start_task', 'TasksController@startTask');
+    Route::post('stop_task', 'TasksController@stopTask');
+    Route::post('accept_task', 'TasksController@acceptTask');
 
 });
