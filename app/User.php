@@ -12,7 +12,7 @@ class User extends Authenticatable
      * @var array
      */
     protected $fillable = [
-        'name', 'email', 'password','surname','name','group_id','level'
+        'name', 'email', 'password', 'surname', 'name', 'group_id', 'level'
     ];
 
     /**
@@ -23,4 +23,15 @@ class User extends Authenticatable
     protected $hidden = [
         'password', 'remember_token',
     ];
+
+
+    public function tasks()
+    {
+        return $this->belongsToMany('App\Task', 'user_task')->withPivot('task_start', 'task_stop', 'status', 'schedule_day', 'status', 'accept', 'section');
+    }
+
+    public function group()
+    {
+        return $this->belongsTo('App\Group');
+    }
 }

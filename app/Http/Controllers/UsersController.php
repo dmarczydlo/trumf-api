@@ -5,19 +5,21 @@ namespace App\Http\Controllers;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 
-use App\Http\Requests;
-use League\Flysystem\Exception;
 use Tymon\JWTAuth\Exceptions\JWTException;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use Tymon\JWTAuth\JWTGuard;
-use Illuminate\Support\Facades\Auth;
 use App\User;
 use Illuminate\Support\Facades\Hash;
+use Validator;
+
 
 class UsersController extends Controller
 {
-    //
 
+    /**
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function login(Request $request)
     {
 
@@ -38,16 +40,20 @@ class UsersController extends Controller
         return response()->json(compact('token'));
     }
 
+    /**
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function logout()
     {
-//        JWTGuard::logout();
-
-
         return response()->json([
             'success' => true
         ]);
     }
 
+    /**
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function create(Request $request)
     {
 
@@ -56,16 +62,27 @@ class UsersController extends Controller
         if (!empty($user_data)) {
             try {
 
-
-//                print_r($user_data); exit();
                 $find_user = User::where('email', '=', $user_data['email'])->first();
                 if (empty($find_user)) {
                     $user_data['password'] = Hash::make($user_data['password']);
-                    $user = User::create($user_data);
+                    $validator = Validator::make($user_data, [
+                        'email' => 'required|email',
+                        'group_id' => 'required|numeric',
+                        'name' => 'required',
+                        'surname' => 'required',
+                        'level' => 'required|numeric',
 
-                    return response()->json([
-                        'user' => $user
                     ]);
+
+                    if (!$validator->fails()) {
+                        $user = User::create($user_data);
+                        return response()->json([
+                            'user' => $user
+                        ]);
+                    } else {
+                        return response()->json(['error' => 'Some of data is not correctly'], 401);
+                    }
+
                 } else {
                     return response()->json(['error' => 'Email is exist'], 401);
                 }
@@ -77,6 +94,10 @@ class UsersController extends Controller
         }
     }
 
+    /**
+     * @param $user_id
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function delete($user_id)
     {
         if ($user_id > 0) {
@@ -95,13 +116,53 @@ class UsersController extends Controller
         ]);
     }
 
-    public function update($user_id)
+    /**
+     * @param $user_id
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function update($user_id, Request $request)
     {
-        return response()->json([
-            'action' => 'update'
+        $user_data = $request->only('email', 'password', 'name', 'group_id', 'surname', 'level');
+
+
+        if (isset($user_data['password'])) {
+            if (!empty($user_data['password'])) {
+                $user_data['password'] = Hash::make($user_data['password']);
+            }
+        }
+
+
+        $validator = Validator::make($user_data, [
+            'email' => 'required|email',
+            'group_id' => 'required|numeric',
+            'name' => 'required',
+            'surname' => 'required',
+            'level' => 'required|numeric',
+
         ]);
+
+        if (!$validator->fails()) {
+            foreach ($user_data as $k => $v) {
+                if (empty($v))
+                    unset($user_data[$k]);
+            }
+
+
+            $user = User::updateOrCreate(['id' => $user_id], $user_data);
+            $user->save();
+
+            return response()->json([
+                'user' => $user
+            ]);
+        } else {
+            return response()->json(['error' => 'Some of data is not correctly'], 401);
+        }
     }
 
+    /**
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function getUsers()
     {
         $users = User::all();
@@ -110,11 +171,14 @@ class UsersController extends Controller
         ]);
     }
 
+    /**
+     * @param $user_id
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function read($user_id)
     {
 
         $user = User::find($user_id);
-
 
         return response()->json([
             'user' => $user

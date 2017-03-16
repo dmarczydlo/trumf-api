@@ -3,7 +3,7 @@
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\Migrations\Migration;
 
-class CreateUserTasks extends Migration
+class CreateTaskTime extends Migration
 {
     /**
      * Run the migrations.
@@ -12,17 +12,12 @@ class CreateUserTasks extends Migration
      */
     public function up()
     {
-        Schema::create('user_task', function (Blueprint $table) {
+        Schema::create('task_time', function (Blueprint $table) {
             $table->increments('id');
-
-            $table->integer('user_id')->unsigned()->references('id')->inTable('users')->onDelete('CASCADE');
             $table->integer('task_id')->unsigned()->references('id')->inTable('tasks')->onDelete('CASCADE');
-            $table->integer('status')->notNullable();
-            $table->integer('accept')->default(0)->notNullable();
-            $table->date('schedule_day')->notNullable();
+            $table->datetime('task_start')->nullable();
+            $table->datetime('task_stop')->nullable();
             $table->string('section', 20)->notNullable();
-
-            $table->timestamps();
         });
     }
 
@@ -33,6 +28,6 @@ class CreateUserTasks extends Migration
      */
     public function down()
     {
-        Schema::drop('user_task');
+        Schema::drop('task_time');
     }
 }
