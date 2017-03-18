@@ -26,7 +26,9 @@ class UsersController extends Controller
         $creditionals = $request->only('email', 'password');
 
         try {
-            if (!$token = JWTAuth::attempt($creditionals)) {
+
+            $customClaims = ['email' => $creditionals['email']];
+            if (!$token = JWTAuth::attempt($creditionals, $customClaims)) {
 
                 return response()->json(['error' => 'Email lub hasła są nieprawidłowe'], 400);
             }
@@ -36,10 +38,9 @@ class UsersController extends Controller
             return response()->json(['error' => 'Wystąpił błą'], 500);
         }
 
-        if($token)
-        {
+        if ($token) {
             //check user group;
-            $user = User::where('email',$creditionals['email'])->first();
+            $user = User::where('email', $creditionals['email'])->first();
 
             $output['token'] = $token;
             $output['group'] = $user->group->name;
