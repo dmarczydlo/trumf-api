@@ -28,7 +28,7 @@ class UsersController extends Controller
         try {
             if (!$token = JWTAuth::attempt($creditionals)) {
 
-                return response()->json(['error' => 'Email lub hasła są nieprawidłowe'], 401);
+                return response()->json(['error' => 'Email lub hasła są nieprawidłowe'], 400);
             }
 
         } catch (JWTException $exception) {
@@ -36,8 +36,16 @@ class UsersController extends Controller
             return response()->json(['error' => 'Wystąpił błą'], 500);
         }
 
+        if($token)
+        {
+            //check user group;
+            $user = User::where('email',$creditionals['email'])->first();
 
-        return response()->json(compact('token'));
+            $output['token'] = $token;
+            $output['group'] = $user->group->name;
+        }
+
+        return response()->json($output);
     }
 
     /**
