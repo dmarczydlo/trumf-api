@@ -11,7 +11,7 @@ use Tymon\JWTAuth\JWTGuard;
 use App\User;
 use Illuminate\Support\Facades\Hash;
 use Validator;
-
+use DB;
 
 class UsersController extends Controller
 {
@@ -93,7 +93,7 @@ class UsersController extends Controller
                     }
 
                 } else {
-                    return response()->json(['error' => 'Email is exist'], 401);
+                    return response()->json(['error' => 'Email występuje już w bazie'], 401);
                 }
             } catch (QueryException $exception) {
                 return response()->json(['error' => 'exception' . $exception->getMessage()], 401);
@@ -174,7 +174,12 @@ class UsersController extends Controller
      */
     public function getUsers()
     {
-        $users = User::all();
+
+        $users = DB::table('users')
+            ->join('groups', 'users.group_id', '=', 'groups.id')
+            ->select('users.name', 'users.surname', 'users.id','users.email','users.level','groups.name AS group')
+            ->get();
+
         return response()->json([
             'users' => $users
         ]);
@@ -191,6 +196,18 @@ class UsersController extends Controller
 
         return response()->json([
             'user' => $user
+        ]);
+    }
+
+    /**
+     * @param $group_id
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function getUserFromGroup($group_id)
+    {
+        $users = User::where('group_id',$group_id)->select('id','name','surname')->get();
+        return response()->json([
+            'users' => $users
         ]);
     }
 }

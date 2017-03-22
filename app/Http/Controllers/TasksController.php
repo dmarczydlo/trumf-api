@@ -86,25 +86,34 @@ class TasksController extends Controller
 
                 $task = Task::find($data['task_id']);
 
-                $limit = DB::table('task_time')
-                    ->join('user_task', 'user_task.id', '=', 'task_time.user_task_id')
-                    ->select(DB::raw('SUM(time) as time'))
-                    ->where('schedule_day', $data['schedule_day'])
-                    ->where('user_id', $data['user_id'])
-                    ->groupBy('user_task.task_id')
-                    ->get();
+                //TODO Check 6h time for day NEXT
 
-                if ($limit['time'] + $task->time <= App::environment('BASIC_TIME') + App::environment('EXTRA_TIME')) {
+                //check that user can do this
+                if ($task->min_lvl <= $user->level) {
+
+                    $limit = DB::table('task_time')
+                        ->join('user_task', 'user_task.id', '=', 'task_time.user_task_id')
+                        ->select(DB::raw('SUM(time) as time'))
+                        ->where('schedule_day', $data['schedule_day'])
+                        ->where('user_id', $data['user_id'])
+                        ->groupBy('user_task.task_id')
+                        ->get();
+
+                    if ($limit['time'] + $task->time <= App::environment('BASIC_TIME') + App::environment('EXTRA_TIME')) {
 
 
-                    $section = $user->group->name;
-                    $user->tasks()->attach($data['task_id'], ['status' => 1, 'schedule_day' => $data['schedule_day'], 'section' => $section, 'order_num' => $data['order_num']]);
+                        $section = $user->group->name;
+                        $user->tasks()->attach($data['task_id'], ['status' => 1, 'schedule_day' => $data['schedule_day'], 'section' => $section, 'order_num' => $data['order_num']]);
 
-                    return response()->json([
-                        'success' => true
-                    ]);
+                        return response()->json([
+                            'success' => true
+                        ]);
+                    } else {
+                        return response()->json(['error' => 'Ten pracownik nie ma wystarczająco czasu w tym dniu na to zadanie'], 401);
+                    }
                 } else {
-                    return response()->json(['error' => 'Ten pracownik nie ma wystarczająco czasu w tym dniu na to zadanie'], 401);
+                    return response()->json(['error' => 'Ten pracownik nie ma takich kompetencji'], 401);
+
                 }
             } else {
                 return response()->json(['error' => 'Brak pracownika w bazie'], 401);

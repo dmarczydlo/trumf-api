@@ -15,6 +15,9 @@ Route::get('/', function () {
     return view('welcome');
 });
 
+Route::get('run_integrator', 'IntegratorController@run_cron');
+
+
 Route::group(['prefix' => 'api'], function () {
     Route::post('login', 'UsersController@login');
 });
@@ -32,6 +35,7 @@ Route::group(['prefix' => 'api/user', 'middleware' => 'jwt.auth'], function () {
     Route::post('update/{user_id}', 'UsersController@update');
     Route::put('create', 'UsersController@create');
     Route::get('all', 'UsersController@getUsers');
+    Route::get('users_from_group/{group_id}','UsersController@getUserFromGroup');
 
 });
 
