@@ -22,7 +22,6 @@ class CreateUsersTable extends Migration
             $table->string('surname', 60)->nullable();
             $table->integer('level')->nullable();
             $table->rememberToken();
-            $table->timestamps();
         });
     }
 

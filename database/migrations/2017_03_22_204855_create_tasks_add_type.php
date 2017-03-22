@@ -3,7 +3,7 @@
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\Migrations\Migration;
 
-class CreateUsersGroups extends Migration
+class CreateTasksAddType extends Migration
 {
     /**
      * Run the migrations.
@@ -12,10 +12,9 @@ class CreateUsersGroups extends Migration
      */
     public function up()
     {
-        Schema::create('groups', function (Blueprint $table) {
-            $table->increments('id');
-            $table->string('name', 40)->nullable();
-
+        //
+        Schema::table('tasks', function ($table) {
+            $table->string('type', 10)->notNullable();
         });
     }
 
@@ -26,6 +25,9 @@ class CreateUsersGroups extends Migration
      */
     public function down()
     {
-        Schema::drop('groups');
+        //
+        Schema::table('tasks', function ($table) {
+            $table->dropColumn('type');
+        });
     }
 }
