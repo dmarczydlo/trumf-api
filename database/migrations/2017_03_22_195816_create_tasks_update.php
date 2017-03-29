@@ -19,7 +19,7 @@ class CreateTasksUpdate extends Migration
             $table->dateTime('date_add')->notNullable();
             $table->dateTime('date_order')->notNullable();
             $table->string('client', 10)->notNullable();
-            $table->string('employee', 10)->notNullable();
+            $table->string('employee', 10)->Nullable();
             $table->boolean('done')->notNullable()->default(false);
             $table->integer('graphic_time')->notNullable();
             $table->integer('graver_time')->notNullable();

@@ -14,4 +14,5 @@ class TaskTime extends Model
     public $timestamps = false;
 
     protected $table = 'task_time';
+
 }

@@ -3,7 +3,7 @@
 namespace App;
 
 use Illuminate\Foundation\Auth\User as Authenticatable;
-
+use DB;
 class User extends Authenticatable
 {
     /**
@@ -11,8 +11,11 @@ class User extends Authenticatable
      *
      * @var array
      */
+    public $timestamps = false;
+
+
     protected $fillable = [
-        'name', 'email', 'password', 'surname', 'name', 'group_id', 'level'
+        'name', 'email', 'password', 'surname', 'name', 'group_id', 'level','avatar'
     ];
 
     /**
@@ -27,7 +30,7 @@ class User extends Authenticatable
 
     public function tasks()
     {
-        return $this->belongsToMany('App\Task', 'user_task')->withPivot('status', 'schedule_day', 'status', 'accept', 'section','order_num');
+        return $this->belongsToMany('App\Task', 'user_task')->withPivot('id','task_id','status_internal', 'schedule_day', 'accept', 'section','order_num');
     }
 
     public function group()

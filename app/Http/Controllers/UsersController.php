@@ -59,6 +59,42 @@ class UsersController extends Controller
         ]);
     }
 
+
+    public function updateProfile($user_id, Request $request)
+    {
+        $user_data = $request->only('password', 'avatar');
+
+        //check user exist
+        $user = User::find($user_id);
+
+        if (!empty($user)) {
+
+            if (!empty($user_data)) {
+
+                if (isset($user_data['password'])) {
+                    if (!empty($user_data['password'])) {
+                        $user_data['password'] = Hash::make($user_data['password']);
+                    } else {
+                        unset($user_data['password']);
+                    }
+                }
+
+                $user = User::updateOrCreate(['id' => $user_id], $user_data);
+                $user->save();
+
+                return response()->json([
+                    'success' => true
+                ]);
+            } else {
+                return response()->json(['error' => 'Brak wymaganych danych'], 401);
+            }
+        } else {
+            return response()->json(['error' => 'Brak użytkownika'], 401);
+        }
+
+    }
+
+
     /**
      * @param Request $request
      * @return \Illuminate\Http\JsonResponse
@@ -66,7 +102,7 @@ class UsersController extends Controller
     public function create(Request $request)
     {
 
-        $user_data = $request->only('email', 'password', 'name', 'group_id', 'surname', 'level');
+        $user_data = $request->only('email', 'password', 'name', 'group_id', 'surname', 'level', 'avatar');
 
         if (!empty($user_data)) {
             try {
@@ -132,7 +168,7 @@ class UsersController extends Controller
      */
     public function update($user_id, Request $request)
     {
-        $user_data = $request->only('email', 'password', 'name', 'group_id', 'surname', 'level');
+        $user_data = $request->only('email', 'password', 'name', 'group_id', 'surname', 'level', 'avatar');
 
 
         if (isset($user_data['password'])) {
@@ -157,7 +193,6 @@ class UsersController extends Controller
                     unset($user_data[$k]);
             }
 
-
             $user = User::updateOrCreate(['id' => $user_id], $user_data);
             $user->save();
 
@@ -177,7 +212,7 @@ class UsersController extends Controller
 
         $users = DB::table('users')
             ->join('groups', 'users.group_id', '=', 'groups.id')
-            ->select('users.name', 'users.surname', 'users.id','users.email','users.level','groups.name AS group')
+            ->select('users.name', 'users.surname', 'users.id', 'users.email', 'users.level', 'groups.name AS group')
             ->get();
 
         return response()->json([
@@ -205,7 +240,7 @@ class UsersController extends Controller
      */
     public function getUserFromGroup($group_id)
     {
-        $users = User::where('group_id',$group_id)->select('id','name','surname')->get();
+        $users = User::where('group_id', $group_id)->select('id', 'name', 'surname')->get();
         return response()->json([
             'users' => $users
         ]);

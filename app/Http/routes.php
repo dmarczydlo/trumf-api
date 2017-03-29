@@ -36,6 +36,7 @@ Route::group(['prefix' => 'api/user', 'middleware' => 'jwt.auth'], function () {
     Route::put('create', 'UsersController@create');
     Route::get('all', 'UsersController@getUsers');
     Route::get('users_from_group/{group_id}','UsersController@getUserFromGroup');
+    Route::post('update_profile/{user_id}','UsersController@updateProfile');
 
 });
 

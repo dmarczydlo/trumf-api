@@ -16,10 +16,13 @@ class TasksController extends Controller
 {
 
     //task status 1 - new
-    //task status 2 - in progress
-    //task status 3 - done
-    //task status 4 - accepted
-    //task status 5 - reclamation
+    //task status 2 - in progress - graphic
+    //task status 3 - done - graphic
+    //task status 4 - accepted - graphic
+    //task status 5 - in progress - graver
+    //task status 6 - done - graver
+    //task status 7 - accepted - graver
+    //task status 10 - reclamation
 
 
     public function read($user_id)
@@ -48,10 +51,29 @@ class TasksController extends Controller
     {
 
         //TODO add logic if employee realize task to fast to scrool task - dodać nowe taski z dnia nastepnego
-        $tasks = User::find($user_id)->tasks()
-            ->where('schedule_day', $day)
-            ->orderBy('order_int', 'ASC')
+
+        $user = User::find($user_id);
+        if ($user->group_id == 2) {
+            $select = ['order_number', 'status', 'prio', 'client', 'done', 'graphic_time as time', 'image_url', 'type'];
+        } else if ($user->group_id == 3) {
+            $select = ['order_number', 'status', 'prio', 'client', 'done', 'graver_time as time', 'image_url', 'type'];
+        }
+//
+        $user_task = [DB::raw('user_task.id AS user_task_id'), 'user_task.task_id', 'user_task.status_internal', 'user_task.schedule_day', 'user_task.accept', 'user_task.section', 'user_task.order_num', DB::raw('SUM(task_time.time) as sum_time')];
+
+        $select = array_merge($select, $user_task);
+
+
+        $tasks = DB::table('tasks')
+            ->select($select)
+            ->join('user_task', 'tasks.id', '=', 'user_task.task_id')
+            ->leftJoin('task_time', 'tasks.id', '=', 'task_time.task_id')
+            ->where('user_id', $user_id)
+            ->where('user_task.schedule_day', $day)
+            ->where('user_task.accept',0)
+            ->groupBy('user_task.task_id')
             ->get();
+
 
         return response()->json([
             'tasks' => $tasks
@@ -99,11 +121,12 @@ class TasksController extends Controller
                         ->groupBy('user_task.task_id')
                         ->get();
 
-                    if ($limit['time'] + $task->time <= App::environment('BASIC_TIME') + App::environment('EXTRA_TIME')) {
+                    $limit_value = isset($limit->limit) ? $limit->limit : 0;
+                    if ($limit_value + $task->time <= App::environment('BASIC_TIME') + App::environment('EXTRA_TIME')) {
 
 
                         $section = $user->group->name;
-                        $user->tasks()->attach($data['task_id'], ['status' => 1, 'schedule_day' => $data['schedule_day'], 'section' => $section, 'order_num' => $data['order_num']]);
+                        $user->tasks()->attach($data['task_id'], ['accept'=>0,'status' => 1, 'schedule_day' => $data['schedule_day'], 'section' => $section, 'order_num' => $data['order_num']]);
 
                         return response()->json([
                             'success' => true
@@ -157,8 +180,8 @@ class TasksController extends Controller
             $task = Task::find($data['task_id']);
             if ($task) {
 
-
-                if (($limit['time'] + $task->time) <= App::environment('BASIC_TIME') + App::environment('EXTRA_TIME')) {
+                $limit_value = isset($limit->limit) ? $limit->limit : 0;
+                if (($limit_value + $task->time) <= App::environment('BASIC_TIME') + App::environment('EXTRA_TIME')) {
 
                     $task_time = TaskTime::create($data);
 
@@ -167,11 +190,18 @@ class TasksController extends Controller
                     //update global task status
 
 
-                    $task = Task::find($data['task_id']);
-                    $task->status = 2;
-                    $task->save();
+                    $userTask = UserTask::find($data['user_task_id']);
+
+
+                    if ($data['section'] === env('GRAPHIC_NAME', 'grafika')) {
+                        $userTask->status_internal = 2;
+                    } else if ($data['section'] === env('GRAVER_NAME', 'grawernia')) {
+                        $userTask->status_internal = 5;
+                    }
+                    $userTask->save();
                     return response()->json([
-                        'time' => $task_time
+                        'time_id' => $task_time->id,
+                        'task_id' => $task_time->task_id
                     ]);
                 } else {
                     return response()->json(['error' => 'Przekroczyłeś swój dzienny limit. Nie można uruchomić tego zadania'], 401);
@@ -209,8 +239,17 @@ class TasksController extends Controller
                 $task_time = TaskTime::updateOrCreate(['id' => $id], $data_task);
                 $task_time->save();
 
+                $userTask = UserTask::find($task->user_task_id);
+
+                if ($userTask->section === env('GRAPHIC_NAME', 'grafika')) {
+                    $userTask->status_internal = 3;
+                } else if ($userTask->section === env('GRAVER_NAME', 'grawernia')) {
+                    $userTask->status_internal = 6;
+                }
+                $userTask->save();
+
                 return response()->json([
-                    'time' => $task_time
+                    'time' => $task_time->time
                 ]);
             } else {
                 return response()->json(['error' => 'Zadanie nie istnieje'], 401);
@@ -230,16 +269,16 @@ class TasksController extends Controller
         ]);
 
         if (!$validator->fails()) {
-            $task_time = TaskTime::find($data['id']);
-            $user_task = UserTask::find($task_time->user_task_id);
-
+            $user_task = UserTask::find($data['id']);
             $user_task->accept = 1;
-            $user_task->status = 4;
+
+            if ($user_task->section === env('GRAPHIC_NAME', 'grafika')) {
+                $user_task->status_internal = 4;
+            } else if ($user_task->section === env('GRAVER_NAME', 'grawernia')) {
+                $user_task->status_internal = 7;
+            }
             $user_task->save();
 
-            $task = Task::find($user_task->task_id);
-            $task->status = 4;
-            $task->save();
 
             return response()->json([
                 'success' => true
