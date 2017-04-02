@@ -35,8 +35,8 @@ Route::group(['prefix' => 'api/user', 'middleware' => 'jwt.auth'], function () {
     Route::post('update/{user_id}', 'UsersController@update');
     Route::put('create', 'UsersController@create');
     Route::get('all', 'UsersController@getUsers');
-    Route::get('users_from_group/{group_id}','UsersController@getUserFromGroup');
-    Route::post('update_profile/{user_id}','UsersController@updateProfile');
+    Route::get('users_from_group/{group_id}', 'UsersController@getUserFromGroup');
+    Route::post('update_profile/{user_id}', 'UsersController@updateProfile');
 
 });
 
@@ -50,5 +50,5 @@ Route::group(['prefix' => 'api/task', 'middleware' => 'jwt.auth'], function () {
     Route::post('start_task', 'TasksController@startTask');
     Route::post('stop_task', 'TasksController@stopTask');
     Route::post('accept_task', 'TasksController@acceptTask');
-
+    Route::post('retunr_task/{user_task_id}', 'TaskController@returnTask');
 });

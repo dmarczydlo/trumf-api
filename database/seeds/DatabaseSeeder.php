@@ -61,6 +61,27 @@ class DatabaseSeeder extends Seeder
         ]);
 
 
+        DB::table('users')->insert([
+            'email' => 'grafikk@gmail.com',
+            'password' => bcrypt('grafik'),
+            'group_id' => 4,
+            'name' => 'Kierownik',
+            'surname' => 'Grafiki',
+            'level' => 5
+        ]);
+
+        DB::table('users')->insert([
+            'email' => 'grawerk@gmail.com',
+            'password' => bcrypt('grawer'),
+            'group_id' => 5,
+            'name' => 'Kierownik',
+            'surname' => 'Grawernii',
+            'level' => 5
+        ]);
+
+
+
+
         DB::table('groups')->insert([
             'name' => 'admin'
         ]);
@@ -71,6 +92,14 @@ class DatabaseSeeder extends Seeder
 
         DB::table('groups')->insert([
             'name' => 'grawernia'
+        ]);
+
+        DB::table('groups')->insert([
+            'name' => 'kierownik grafiki'
+        ]);
+
+        DB::table('groups')->insert([
+            'name' => 'kierownik grawernii'
         ]);
 
 

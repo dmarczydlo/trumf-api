@@ -86,10 +86,10 @@ class UsersController extends Controller
                     'success' => true
                 ]);
             } else {
-                return response()->json(['error' => 'Brak wymaganych danych'], 401);
+                return response()->json(['error' => 'Brak wymaganych danych'], 402);
             }
         } else {
-            return response()->json(['error' => 'Brak użytkownika'], 401);
+            return response()->json(['error' => 'Brak użytkownika'], 402);
         }
 
     }
@@ -103,6 +103,8 @@ class UsersController extends Controller
     {
 
         $user_data = $request->only('email', 'password', 'name', 'group_id', 'surname', 'level', 'avatar');
+
+
 
         if (!empty($user_data)) {
             try {
@@ -125,17 +127,17 @@ class UsersController extends Controller
                             'user' => $user
                         ]);
                     } else {
-                        return response()->json(['error' => 'Brak wymaganych danych'], 401);
+                        return response()->json(['error' => 'Brak wymaganych danych'], 402);
                     }
 
                 } else {
-                    return response()->json(['error' => 'Email występuje już w bazie'], 401);
+                    return response()->json(['error' => 'Email występuje już w bazie'], 402);
                 }
             } catch (QueryException $exception) {
-                return response()->json(['error' => 'exception' . $exception->getMessage()], 401);
+                return response()->json(['error' => 'exception' . $exception->getMessage()], 402);
             }
         } else {
-            return response()->json(['error' => 'Email lub hasło są nieprawidłowe'], 401);
+            return response()->json(['error' => 'Email lub hasło są nieprawidłowe'], 402);
         }
     }
 
@@ -200,7 +202,7 @@ class UsersController extends Controller
                 'user' => $user
             ]);
         } else {
-            return response()->json(['error' => 'Brak wymaganych danych'], 401);
+            return response()->json(['error' => 'Brak wymaganych danych'], 402);
         }
     }
 

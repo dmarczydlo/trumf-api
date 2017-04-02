@@ -38,10 +38,43 @@ class TasksController extends Controller
     public function readAllNewTask()
     {
 
-        $tasks = Task::where('status', '=', 1)->get();
+        $select_graphic = ['task_id','order_number', 'status', 'prio', 'client', 'done', 'graphic_time as time', 'image_url', 'type','productID','min_lvl'];
+        $select_graver = ['task_id','order_number', 'status', 'prio', 'client', 'done', 'graver_time as time', 'image_url', 'type','productID','min_lvl'];
 
+        //tasks for graphic
+        $graphic_tasks = DB::table('tasks')
+            ->join(DB::raw('( SELECT graphic_block, status_internal, updated_at,  task_id  FROM `user_task` ORDER BY updated_at DESC ) AS user_task'), function ($join) {
+                $join->on('tasks.id', '=', 'user_task.task_id');
+            })
+            ->select($select_graphic)
+            ->where('graphic_time', '>', 0)
+            ->where('user_task.graphic_block', 0)
+            ->where('done', 0)
+            ->where('user_task.status_internal', '<>', 4)
+            ->groupBy('user_task.task_id')
+            ->orderBy('prio')
+            ->get();
+
+
+
+        //tasks for graver
+        $graver_tasks = DB::table('tasks')
+            ->join(DB::raw('( SELECT graver_block, status_internal, updated_at,  task_id  FROM `user_task` ORDER BY updated_at DESC ) AS user_task'), function ($join) {
+                $join->on('tasks.id', '=', 'user_task.task_id');
+            })
+            ->select($select_graver)
+            ->where('graver_time', '>', 0)
+            ->where('user_task.graver_block', 0)
+            ->where('done', 0)
+            ->where('user_task.status_internal', '<>', 7)
+            ->groupBy('user_task.task_id')
+            ->orderBy('prio')
+            ->get();
+
+
+        $return = ['graphic' => $graphic_tasks, 'graver' => $graver_tasks];
         return response()->json([
-            'tasks' => $tasks
+            'tasks' => $return
         ]);
 
     }
@@ -53,10 +86,10 @@ class TasksController extends Controller
         //TODO add logic if employee realize task to fast to scrool task - dodać nowe taski z dnia nastepnego
 
         $user = User::find($user_id);
-        if ($user->group_id == 2) {
-            $select = ['order_number', 'status', 'prio', 'client', 'done', 'graphic_time as time', 'image_url', 'type'];
-        } else if ($user->group_id == 3) {
-            $select = ['order_number', 'status', 'prio', 'client', 'done', 'graver_time as time', 'image_url', 'type'];
+        if ($user->group->name == env('GRAPHIC_NAME')) {
+            $select = ['order_number', 'status', 'prio', 'client', 'done', 'graphic_time as time', 'image_url', 'type','productID'];
+        } else if ($user->group->name == env('GRAVER_NAME')) {
+            $select = ['order_number', 'status', 'prio', 'client', 'done', 'graver_time as time', 'image_url', 'type','productID'];
         }
 //
         $user_task = [DB::raw('user_task.id AS user_task_id'), 'user_task.task_id', 'user_task.status_internal', 'user_task.schedule_day', 'user_task.accept', 'user_task.section', 'user_task.order_num', DB::raw('SUM(task_time.time) as sum_time')];
@@ -70,7 +103,7 @@ class TasksController extends Controller
             ->leftJoin('task_time', 'tasks.id', '=', 'task_time.task_id')
             ->where('user_id', $user_id)
             ->where('user_task.schedule_day', $day)
-            ->where('user_task.accept',0)
+            ->where('user_task.accept', 0)
             ->groupBy('user_task.task_id')
             ->get();
 
@@ -93,14 +126,19 @@ class TasksController extends Controller
         $data = $request->only('user_id', 'task_id', 'schedule_day', 'order_num');
 
 
-        $task_do = User::find($data['user_id'])->tasks()
-            ->where('task_id', $data['task_id'])
-            ->where('schedule_day', $data['schedule_day'])
-            ->where('user_task.status', 1)
-            ->count();
+        $user = User::find($data['user_id']);
+        if ($user->group->name == env('GRAVER_NAME', 'grawernia')) {
+
+            $task_block = UserTask::where('task_id', $data['task_id'])->where('block_graver', 1)->count();
+            $data_block = 'block_graver';
+
+        } else if ($user->group->name == env('GRAPHIC_NAME', 'grafika')) {
+            $task_block = UserTask::where('task_id', $data['task_id'])->where('block_graphic', 1)->count();
+            $data_block = 'block_graphic';
+        }
 
 
-        if ($task_do <= 0) {
+        if ($task_block <= 0) {
             $user = User::where('id', $data['user_id'])->first();
             if (!empty($user)) {
 
@@ -126,23 +164,23 @@ class TasksController extends Controller
 
 
                         $section = $user->group->name;
-                        $user->tasks()->attach($data['task_id'], ['accept'=>0,'status' => 1, 'schedule_day' => $data['schedule_day'], 'section' => $section, 'order_num' => $data['order_num']]);
+                        $user->tasks()->attach($data['task_id'], [$data_block => 1, 'accept' => 0, 'status' => 1, 'schedule_day' => $data['schedule_day'], 'section' => $section, 'order_num' => $data['order_num']]);
 
                         return response()->json([
                             'success' => true
                         ]);
                     } else {
-                        return response()->json(['error' => 'Ten pracownik nie ma wystarczająco czasu w tym dniu na to zadanie'], 401);
+                        return response()->json(['error' => 'Ten pracownik nie ma wystarczająco czasu w tym dniu na to zadanie'], 402);
                     }
                 } else {
-                    return response()->json(['error' => 'Ten pracownik nie ma takich kompetencji'], 401);
+                    return response()->json(['error' => 'Ten pracownik nie ma takich kompetencji'], 402);
 
                 }
             } else {
-                return response()->json(['error' => 'Brak pracownika w bazie'], 401);
+                return response()->json(['error' => 'Brak pracownika w bazie'], 402);
             }
         } else {
-            return response()->json(['error' => 'To zadanie zostało już przydzielone do tego pracownika'], 401);
+            return response()->json(['error' => 'To zadanie zostało już przydzielone do pracownika'], 402);
         }
 
     }
@@ -204,16 +242,16 @@ class TasksController extends Controller
                         'task_id' => $task_time->task_id
                     ]);
                 } else {
-                    return response()->json(['error' => 'Przekroczyłeś swój dzienny limit. Nie można uruchomić tego zadania'], 401);
+                    return response()->json(['error' => 'Przekroczyłeś swój dzienny limit. Nie można uruchomić tego zadania'], 402);
 
                 }
             } else {
-                return response()->json(['error' => 'Zadanie nie istnieje'], 401);
+                return response()->json(['error' => 'Zadanie nie istnieje'], 402);
 
             }
 
         } else {
-            return response()->json(['error' => 'Brak wymaganych danych'], 401);
+            return response()->json(['error' => 'Brak wymaganych danych'], 402);
         }
     }
 
@@ -252,10 +290,10 @@ class TasksController extends Controller
                     'time' => $task_time->time
                 ]);
             } else {
-                return response()->json(['error' => 'Zadanie nie istnieje'], 401);
+                return response()->json(['error' => 'Zadanie nie istnieje'], 402);
             }
         } else {
-            return response()->json(['error' => 'Brak wymaganych danych'], 401);
+            return response()->json(['error' => 'Brak wymaganych danych'], 402);
         }
     }
 
@@ -274,8 +312,10 @@ class TasksController extends Controller
 
             if ($user_task->section === env('GRAPHIC_NAME', 'grafika')) {
                 $user_task->status_internal = 4;
+                $user_task->graphic_block = 0;
             } else if ($user_task->section === env('GRAVER_NAME', 'grawernia')) {
                 $user_task->status_internal = 7;
+                $user_task->graver_block = 0;
             }
             $user_task->save();
 
@@ -284,7 +324,25 @@ class TasksController extends Controller
                 'success' => true
             ]);
         } else {
-            return response()->json(['error' => 'Brak wymaganych danych'], 401);
+            return response()->json(['error' => 'Brak wymaganych danych'], 402);
+        }
+    }
+
+    function returnTask($user_task_id)
+    {
+        $user_task = UserTask::find($user_task_id);
+        if ($user_task->status_internal != 2 && $user_task->status_internal != 5) {
+            if ($user_task->section === env('GRAPHIC_NAME', 'grafika')) {
+                $user_task->status_internal = 4;
+            } else if ($user_task->section === env('GRAVER_NAME', 'grawernia')) {
+                $user_task->graver_block = 0;
+            }
+            $user_task->save();
+            return response()->json([
+                'success' => true
+            ]);
+        } else {
+            return response()->json(['error' => 'To zadanie trwa. Musi zostać zakończone'], 402);
         }
     }
 

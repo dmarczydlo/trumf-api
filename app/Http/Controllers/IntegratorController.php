@@ -22,12 +22,11 @@ class IntegratorController extends Controller
             'Logo' => 'client',
             'LogoH' => 'employee',
             'Rd' => 'type',
-
+            'SymKar'=>'productID',
             'Priorytet' => 'prio',
             'Status' => 'status',
             'Opis' => 'name',
-            'Poziom' => 'min_level',
-
+            'StTrudnosci' => 'min_lvl',
             'GotowyProjekt' => 'done',
             'GrafikaCzasPierwotny' => 'graphic_time',
             'GrawerniaCzas' => 'graver_time',
@@ -68,32 +67,20 @@ class IntegratorController extends Controller
     {
         echo 'run';
 
-        $tasks = DB::connection('sqlsrv')->table('dbo.w_fnGetOrders4Isoft()')->limit(1)->get();
-//        echo "<pre>";
-//        print_r($tasks);
-
-        $this->saveImage($tasks[0]->SloImage, '/images/', 0);
-        exit();
-
-
         //get max last softlab_id
         $softlab_max_id = DB::table('tasks')->max('order_number');
-
+        if(!$softlab_max_id>0) $softlab_max_id = 1;
 
         $tasks = DB::connection('sqlsrv')
             ->table('dbo.w_fnGetOrders4Isoft()')
-            ->select("Nagid", "LinId", "Data", "Rd", "DataSprz", "Logo", "LogoH", "Priorytet", "Status", "GotowyProjekt", "GrafikaCzasPierwotny", "GrafikaCzasWtorny", "GrawerniaCzas")
+            ->select("Nagid", "LinId", "Data", "Rd", "DataSprz", "Logo", "LogoH", "Priorytet", "Status", "GotowyProjekt", "GrafikaCzasPierwotny", "GrafikaCzasWtorny", "GrawerniaCzas","SymKar")
             ->where('Nagid', '>=', env('TASK_START_ID', 1))
             ->where('Nagid', '>=', $softlab_max_id)
             ->get();
 
         $count_added = 0;
         if (!empty($tasks)) {
-//            echo "<pre>";
-//            print_r($tasks); exit();
             foreach ($tasks as $task) {
-
-//                print_R($task); exit();
                 $count = DB::table('tasks')->where('tryumf_tmp_id', $task->LinId)->where('order_number', $task->Nagid)->count();
                 if ($count == 0) {
                     //add new task
@@ -118,8 +105,6 @@ class IntegratorController extends Controller
                         } else if ($k !== 'GrafikaCzasWtorny') {
                             $data_my[$this->translateData($k)] = $v;
                         }
-
-
                     }
 
                     if (!empty($data_my)) {
