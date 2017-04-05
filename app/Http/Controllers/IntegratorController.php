@@ -71,11 +71,13 @@ class IntegratorController extends Controller
         $softlab_max_id = DB::table('tasks')->max('order_number');
         if(!$softlab_max_id>0) $softlab_max_id = 1;
 
+        //status >=2 task is authorized
         $tasks = DB::connection('sqlsrv')
             ->table('dbo.w_fnGetOrders4Isoft()')
             ->select("Nagid", "LinId", "Data", "Rd", "DataSprz", "Logo", "LogoH", "Priorytet", "Status", "GotowyProjekt", "GrafikaCzasPierwotny", "GrafikaCzasWtorny", "GrawerniaCzas","SymKar")
             ->where('Nagid', '>=', env('TASK_START_ID', 1))
             ->where('Nagid', '>=', $softlab_max_id)
+            ->where('Status','>=',2)
             ->get();
 
         $count_added = 0;
@@ -120,5 +122,33 @@ class IntegratorController extends Controller
         }
         echo ' DONE Added ' . $count_added;
 
+    }
+
+    function test_image()
+    {
+
+        if(!$softlab_max_id>0) $softlab_max_id = 1;
+
+        $tasks = DB::connection('sqlsrv')
+            ->table('dbo.w_fnGetOrders4Isoft()')
+//            ->select("Nagid", "LinId", "Data", "Rd", "DataSprz", "Logo", "LogoH", "Priorytet", "Status", "GotowyProjekt", "GrafikaCzasPierwotny", "GrafikaCzasWtorny", "GrawerniaCzas","SymKar")
+            ->where('Nagid', '>=', env('TASK_START_ID', 1))
+            ->where('Nagid', '>=', $softlab_max_id)
+            ->limit(1)
+            ->get();
+
+        dd($tasks);
+
+//        $this->saveImage($tasks[0]->i)
+    }
+
+    //run to check that something was changed like status
+    function updateTaskList()
+    {
+        // 1.md5 dla calej bazy -> zapisanie wartosci w mojej bazie
+        // 2. utworzenie json.tmp z ich obecnymi danymi
+        // 3. przy nowej wartosci md5 ponowne utworzenie JSON
+        // 4. zrobienie diff 2 jsono i pobranie rozminy
+        // 5. aktualizacja tylko zmienionych wartosic
     }
 }

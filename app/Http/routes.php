@@ -16,7 +16,7 @@ Route::get('/', function () {
 });
 
 Route::get('run_integrator', 'IntegratorController@run_cron');
-
+Route::get('test_image', 'IntegratorController@test_image');
 
 Route::group(['prefix' => 'api'], function () {
     Route::post('login', 'UsersController@login');
@@ -50,5 +50,6 @@ Route::group(['prefix' => 'api/task', 'middleware' => 'jwt.auth'], function () {
     Route::post('start_task', 'TasksController@startTask');
     Route::post('stop_task', 'TasksController@stopTask');
     Route::post('accept_task', 'TasksController@acceptTask');
-    Route::post('retunr_task/{user_task_id}', 'TaskController@returnTask');
+    Route::post('remove_task/{user_task_id}', 'TaskController@removeTask');
+    Route::post('move_task/{user_task_id}/{order_num}', 'TaskController@moveTask');
 });

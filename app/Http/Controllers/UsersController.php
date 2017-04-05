@@ -242,7 +242,7 @@ class UsersController extends Controller
      */
     public function getUserFromGroup($group_id)
     {
-        $users = User::where('group_id', $group_id)->select('id', 'name', 'surname')->get();
+        $users = User::where('group_id', $group_id)->select('id', 'name', 'surname','level')->get();
         return response()->json([
             'users' => $users
         ]);

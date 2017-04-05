@@ -38,37 +38,36 @@ class TasksController extends Controller
     public function readAllNewTask()
     {
 
-        $select_graphic = ['task_id','order_number', 'status', 'prio', 'client', 'done', 'graphic_time as time', 'image_url', 'type','productID','min_lvl'];
-        $select_graver = ['task_id','order_number', 'status', 'prio', 'client', 'done', 'graver_time as time', 'image_url', 'type','productID','min_lvl'];
+            $select_graphic = ['tasks.id as task_id','order_number', 'user_task.status_internal as status', 'prio', 'client',  'graphic_time as time', 'image_url', 'type','productID','min_lvl'];
+            $select_graver = ['tasks.id as task_id','order_number', 'user_task.status_internal as status', 'prio', 'client',  'graver_time as time', 'image_url', 'type','productID','min_lvl'];
 
-        //tasks for graphic
-        $graphic_tasks = DB::table('tasks')
-            ->join(DB::raw('( SELECT graphic_block, status_internal, updated_at,  task_id  FROM `user_task` ORDER BY updated_at DESC ) AS user_task'), function ($join) {
+            //tasks for graphic
+            $graphic_tasks = DB::table('tasks')
+            ->leftJoin(DB::raw('( SELECT graphic_block, status_internal, updated_at,  task_id  FROM `user_task` ORDER BY updated_at DESC ) AS user_task'), function ($join) {
                 $join->on('tasks.id', '=', 'user_task.task_id');
             })
             ->select($select_graphic)
             ->where('graphic_time', '>', 0)
-            ->where('user_task.graphic_block', 0)
+            ->where(function ($query) {$query->where('user_task.graphic_block', '=', 0)->orWhere('user_task.graphic_block', '=', NULL);})
             ->where('done', 0)
-            ->where('user_task.status_internal', '<>', 4)
-            ->groupBy('user_task.task_id')
-            ->orderBy('prio')
+            ->where(function ($query) {$query->where('user_task.status_internal', '<>', 4)->orWhere('user_task.status_internal', '=', NULL);})
+            ->groupBy('tasks.id')
+            ->orderBy('prio','desc')
             ->get();
 
 
-
-        //tasks for graver
-        $graver_tasks = DB::table('tasks')
-            ->join(DB::raw('( SELECT graver_block, status_internal, updated_at,  task_id  FROM `user_task` ORDER BY updated_at DESC ) AS user_task'), function ($join) {
+            //tasks for graver
+            $graver_tasks = DB::table('tasks')
+            ->leftJoin(DB::raw('( SELECT graver_block, status_internal, updated_at,  task_id  FROM `user_task` ORDER BY updated_at DESC ) AS user_task'), function ($join) {
                 $join->on('tasks.id', '=', 'user_task.task_id');
             })
             ->select($select_graver)
             ->where('graver_time', '>', 0)
-            ->where('user_task.graver_block', 0)
+            ->where(function ($query) {$query->where('user_task.graver_block', '=', 0)->orWhere('user_task.graver_block', '=', NULL);})
             ->where('done', 0)
-            ->where('user_task.status_internal', '<>', 7)
-            ->groupBy('user_task.task_id')
-            ->orderBy('prio')
+            ->where(function ($query) {$query->where('user_task.status_internal', '<>', 7)->orWhere('user_task.status_internal', '=', NULL);})
+            ->groupBy('tasks.id')
+            ->orderBy('prio','desc')
             ->get();
 
 
@@ -87,13 +86,12 @@ class TasksController extends Controller
 
         $user = User::find($user_id);
         if ($user->group->name == env('GRAPHIC_NAME')) {
-            $select = ['order_number', 'status', 'prio', 'client', 'done', 'graphic_time as time', 'image_url', 'type','productID'];
+            $select = ['user_id','order_number', 'user_task.status_internal as status', 'prio', 'client', 'done', 'graphic_time as time', 'image_url', 'type','productID'];
         } else if ($user->group->name == env('GRAVER_NAME')) {
-            $select = ['order_number', 'status', 'prio', 'client', 'done', 'graver_time as time', 'image_url', 'type','productID'];
+            $select = ['user_id','order_number', 'user_task.status_internal as status', 'prio', 'client', 'done', 'graver_time as time', 'image_url', 'type','productID'];
         }
-//
-        $user_task = [DB::raw('user_task.id AS user_task_id'), 'user_task.task_id', 'user_task.status_internal', 'user_task.schedule_day', 'user_task.accept', 'user_task.section', 'user_task.order_num', DB::raw('SUM(task_time.time) as sum_time')];
 
+        $user_task = [DB::raw('user_task.id AS user_task_id'), 'user_task.task_id', 'user_task.status_internal', 'user_task.schedule_day', 'user_task.accept', 'user_task.section', 'user_task.order_num', DB::raw('SUM(task_time.time) as sum_time')];
         $select = array_merge($select, $user_task);
 
 
@@ -123,18 +121,18 @@ class TasksController extends Controller
         //TODO Validate
 
         //check if exist
-        $data = $request->only('user_id', 'task_id', 'schedule_day', 'order_num');
+        $data = $request->only('user_id', 'task_id', 'schedule_day');
 
 
         $user = User::find($data['user_id']);
         if ($user->group->name == env('GRAVER_NAME', 'grawernia')) {
 
-            $task_block = UserTask::where('task_id', $data['task_id'])->where('block_graver', 1)->count();
-            $data_block = 'block_graver';
+            $task_block = UserTask::where('task_id', $data['task_id'])->where('graver_block', 1)->count();
+            $data_block = 'graver_block';
 
         } else if ($user->group->name == env('GRAPHIC_NAME', 'grafika')) {
-            $task_block = UserTask::where('task_id', $data['task_id'])->where('block_graphic', 1)->count();
-            $data_block = 'block_graphic';
+            $task_block = UserTask::where('task_id', $data['task_id'])->where('graphic_block', 1)->count();
+            $data_block = 'graphic_block';
         }
 
 
@@ -149,7 +147,7 @@ class TasksController extends Controller
                 //TODO Check 6h time for day NEXT
 
                 //check that user can do this
-                if ($task->min_lvl <= $user->level) {
+                if ($task->min_lvl > $user->level) {
 
                     $limit = DB::table('task_time')
                         ->join('user_task', 'user_task.id', '=', 'task_time.user_task_id')
@@ -164,7 +162,8 @@ class TasksController extends Controller
 
 
                         $section = $user->group->name;
-                        $user->tasks()->attach($data['task_id'], [$data_block => 1, 'accept' => 0, 'status' => 1, 'schedule_day' => $data['schedule_day'], 'section' => $section, 'order_num' => $data['order_num']]);
+                        //TODO add observe
+                        $user->tasks()->attach($data['task_id'], [$data_block => 1, 'accept' => 0, 'status_internal' => 1, 'schedule_day' => $data['schedule_day'], 'section' => $section, 'order_num' => 10]);
 
                         return response()->json([
                             'success' => true
@@ -328,7 +327,7 @@ class TasksController extends Controller
         }
     }
 
-    function returnTask($user_task_id)
+    function removeTask($user_task_id)
     {
         $user_task = UserTask::find($user_task_id);
         if ($user_task->status_internal != 2 && $user_task->status_internal != 5) {
@@ -346,7 +345,6 @@ class TasksController extends Controller
         }
     }
 
-    public
     function readAllTasks()
     {
         $tasks = Task::all();
@@ -355,6 +353,12 @@ class TasksController extends Controller
             'tasks' => $tasks
         ]);
     }
+
+    function moveTask($user_task_id,$order_num)
+    {
+
+    }
+
 
 
 }
