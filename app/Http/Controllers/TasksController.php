@@ -46,9 +46,6 @@ class TasksController extends Controller
 //        $subQuery =
 
 
-
-
-
         $graphic_tasks = DB::table('tasks')
             ->leftJoin(DB::raw('( SELECT MAX(graphic_block) as graphic_block, status_internal, updated_at,  task_id  FROM `user_task` group by task_id  ORDER BY  updated_at DESC ) AS user_task'), function ($join) {
                 $join->on('tasks.id', '=', 'user_task.task_id');
@@ -150,14 +147,17 @@ class TasksController extends Controller
         if ($user->group->name == env('GRAVER_NAME', 'grawernia')) {
             $task_block = UserTask::where('task_id', $data['task_id'])->where('graver_block', 1)->count();
             $data_block = 'graver_block';
+            $data_select = 'graver_time';
 
         } else if ($user->group->name == env('GRAPHIC_NAME', 'grafika')) {
             echo $task_block = UserTask::where('task_id', $data['task_id'])->where('graphic_block', 1)->count();
             $data_block = 'graphic_block';
+            $data_select = 'graphic_time';
         }
 
         if ($task_block > 0)
             return response()->json(['error' => 'To zadanie zostało już przydzielone do pracownika'], 402);
+
         $user = User::where('id', $data['user_id'])->first();
 
         if (empty($user))
@@ -170,15 +170,16 @@ class TasksController extends Controller
         if ($task->min_lvl > $user->level)
             return response()->json(['error' => 'Ten pracownik nie ma takich kompetencji'], 402);
 
-        $limit = DB::table('task_time')
-            ->join('user_task', 'user_task.id', '=', 'task_time.user_task_id')
-            ->select(DB::raw('SUM(time) as time'))
+        $limit = DB::table('user_task')
+            ->leftJoin('task_time', 'user_task.id', '=', 'task_time.user_task_id')
+            ->join('tasks', 'user_task.task_id', '=', 'tasks.id')
+            ->select(DB::raw("SUM(CASE WHEN task_time.time >0 THEN task_time.time ELSE $data_select END ) as time"))
             ->where('schedule_day', $data['schedule_day'])
             ->where('user_id', $data['user_id'])
-            ->groupBy('user_task.task_id')
-            ->get();
+            ->first();
 
-        $limit_value = isset($limit->limit) ? $limit->limit : 0;
+
+        $limit_value = isset($limit->time) ? $limit->time : 0;
         if ($limit_value + $task->time > App::environment('BASIC_TIME') + App::environment('EXTRA_TIME'))
             return response()->json(['error' => 'Ten pracownik nie ma wystarczająco czasu w tym dniu na to zadanie'], 402);
 
