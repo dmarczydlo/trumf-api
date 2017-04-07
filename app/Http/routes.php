@@ -15,7 +15,7 @@ Route::get('/', function () {
     return view('welcome');
 });
 
-Route::get('run_integrator', 'IntegratorController@run_cron');
+Route::get('run_integrator', 'IntegratorController@newDataChecker');
 Route::get('test_image', 'IntegratorController@test_image');
 
 Route::group(['prefix' => 'api'], function () {

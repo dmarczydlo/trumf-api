@@ -7,6 +7,8 @@ use Illuminate\Http\Request;
 
 use App\Http\Requests;
 use DB;
+use File;
+use Hash;
 use Illuminate\Support\Facades\Storage;
 
 class IntegratorController extends Controller
@@ -22,7 +24,7 @@ class IntegratorController extends Controller
             'Logo' => 'client',
             'LogoH' => 'employee',
             'Rd' => 'type',
-            'SymKar'=>'productID',
+            'SymKar' => 'productID',
             'Priorytet' => 'prio',
             'Status' => 'status',
             'Opis' => 'name',
@@ -41,12 +43,11 @@ class IntegratorController extends Controller
     function saveImage($image_string, $path_img, $id = null)
     {
 
-       // $image_string = $image_string;
+        // $image_string = $image_string;
 
 
-
-        $handle = fopen($_SERVER['DOCUMENT_ROOT'] . $path_img . date('ymdhis') . '.jpg',"a+");
-        if(fwrite($handle,$image_string)===FALSE){
+        $handle = fopen($_SERVER['DOCUMENT_ROOT'] . $path_img . date('ymdhis') . '.jpg', "a+");
+        if (fwrite($handle, $image_string) === FALSE) {
         }
 
         echo 'done';
@@ -62,6 +63,77 @@ class IntegratorController extends Controller
             echo 'An error occurred.';
     }
 
+    function checkAndgenerateHASH($data)
+    {
+        $new_hash = md5(json_encode($data));
+        $last_hash = DB::table('hash')->orderBy('id', 'desc')->first();
+
+        if (empty($last_hash)) {
+            $whatIsNew = $this->jsonCreateAndMerge($data);
+            dd($whatIsNew);
+        } else if ($last_hash->hash != $new_hash) {
+            //generate JSON
+            $whatIsNew = $this->jsonCreateAndMerge($data);
+
+            dd($whatIsNew);
+//            print_r($whatIsNew);
+
+
+            //save new hash
+            //Hash::create($new_hash);
+        }
+
+        return md5($data);
+    }
+
+    function jsonCreateAndMerge($data)
+    {
+        $json_new = json_encode($data);
+
+        $last_json_path = './db/last_db.json';
+
+        if (!File::exists($last_json_path)) {
+            //create json
+            file_put_contents($last_json_path, $json_new);
+            // all is new
+            return $data;
+        }
+
+        file_put_contents($last_json_path, $json_new);
+        $last_json = file_get_contents($last_json_path);
+
+         $tab_a = (json_decode($last_json,true));
+         $tab_b = (json_decode($json_new,true));
+//         echo gettype($tab_a);
+//         echo gettype($tab_b);
+        $diff = array_diff($tab_a,$tab_b);
+        echo 1; exit();
+//        return 1;
+//        return array_diff(json_decode($json_new,true), json_decode($last_json,true));
+
+        //merge and find what is new
+    }
+
+    function newDataChecker()
+    {
+
+        $tasks = DB::connection('sqlsrv')
+            ->table('dbo.w_fnGetOrders4Isoft()')
+            ->select("Nagid", "LinId", "Data", "Rd", "DataSprz", "Logo", "LogoH", "Priorytet", "Status", "GotowyProjekt", "GrafikaCzasPierwotny", "GrafikaCzasWtorny", "GrawerniaCzas", "SymKar")
+            ->where('Nagid', '>=', env('TASK_START_ID', 1))
+//            ->where('Status', '>=', 2)
+            ->get();
+
+
+        if (empty($tasks)) {
+            echo 'empty data';
+            exit();
+        }
+
+        $this->checkAndgenerateHASH($tasks);
+
+
+    }
 
     function run_cron()
     {
@@ -69,15 +141,15 @@ class IntegratorController extends Controller
 
         //get max last softlab_id
         $softlab_max_id = DB::table('tasks')->max('order_number');
-        if(!$softlab_max_id>0) $softlab_max_id = 1;
+        if (!$softlab_max_id > 0) $softlab_max_id = 1;
 
         //status >=2 task is authorized
         $tasks = DB::connection('sqlsrv')
             ->table('dbo.w_fnGetOrders4Isoft()')
-            ->select("Nagid", "LinId", "Data", "Rd", "DataSprz", "Logo", "LogoH", "Priorytet", "Status", "GotowyProjekt", "GrafikaCzasPierwotny", "GrafikaCzasWtorny", "GrawerniaCzas","SymKar")
+            ->select("Nagid", "LinId", "Data", "Rd", "DataSprz", "Logo", "LogoH", "Priorytet", "Status", "GotowyProjekt", "GrafikaCzasPierwotny", "GrafikaCzasWtorny", "GrawerniaCzas", "SymKar")
             ->where('Nagid', '>=', env('TASK_START_ID', 1))
             ->where('Nagid', '>=', $softlab_max_id)
-            ->where('Status','>=',2)
+            ->where('Status', '>=', 2)
             ->get();
 
         $count_added = 0;
@@ -127,7 +199,7 @@ class IntegratorController extends Controller
     function test_image()
     {
 
-echo 'start';
+        echo 'start';
         $tasks = DB::connection('sqlsrv')
             ->table('dbo.w_fnGetOrders4Isoft()')
             ->get();
@@ -135,7 +207,8 @@ echo 'start';
 //        dd($tasks);
 
         echo "<pre>";
-        print_r($tasks);exit();
+        print_r($tasks);
+        exit();
 //        $this->saveImage($tasks[0]->i)
     }
 
