@@ -150,7 +150,7 @@ class TasksController extends Controller
             $data_select = 'graver_time';
 
         } else if ($user->group->name == env('GRAPHIC_NAME', 'grafika')) {
-            echo $task_block = UserTask::where('task_id', $data['task_id'])->where('graphic_block', 1)->count();
+            $task_block = UserTask::where('task_id', $data['task_id'])->where('graphic_block', 1)->count();
             $data_block = 'graphic_block';
             $data_select = 'graphic_time';
         }
@@ -168,19 +168,18 @@ class TasksController extends Controller
         //TODO Check 6h time for day NEXT
         //check that user can do this
         if ($task->min_lvl > $user->level)
-            return response()->json(['error' => 'Ten pracownik nie ma takich kompetencji'], 402);
+            return response()->json(['error' => 'Wybrany pracownik ma zbyt niskie kompetencje'], 402);
 
         $limit = DB::table('user_task')
-            ->leftJoin('task_time', 'user_task.id', '=', 'task_time.user_task_id')
+            ->leftJoin((DB::raw("(select SUM(time) as time, user_task_id from task_time group by user_task_id) as task_time")), 'user_task.id', '=', 'task_time.user_task_id')
             ->join('tasks', 'user_task.task_id', '=', 'tasks.id')
             ->select(DB::raw("SUM(CASE WHEN task_time.time >0 THEN task_time.time ELSE $data_select END ) as time"))
             ->where('schedule_day', $data['schedule_day'])
             ->where('user_id', $data['user_id'])
             ->first();
 
-
         $limit_value = isset($limit->time) ? $limit->time : 0;
-        if ($limit_value + $task->time > App::environment('BASIC_TIME') + App::environment('EXTRA_TIME'))
+        if ($limit_value + $task->time > env('BASIC_TIME') +env('EXTRA_TIME'))
             return response()->json(['error' => 'Ten pracownik nie ma wystarczająco czasu w tym dniu na to zadanie'], 402);
 
         $section = $user->group->name;
@@ -238,7 +237,7 @@ class TasksController extends Controller
 
 
         $limit_value = isset($limit->limit) ? $limit->limit : 0;
-        if (($limit_value + $task->time) > App::environment('BASIC_TIME') + App::environment('EXTRA_TIME'))
+        if (($limit_value + $task->time) > env('BASIC_TIME') + env('EXTRA_TIME'))
             return response()->json(['error' => 'Przekroczyłeś swój dzienny limit. Nie można uruchomić tego zadania'], 402);
 
 

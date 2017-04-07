@@ -127,18 +127,15 @@ class IntegratorController extends Controller
     function test_image()
     {
 
-        if(!$softlab_max_id>0) $softlab_max_id = 1;
-
+echo 'start';
         $tasks = DB::connection('sqlsrv')
             ->table('dbo.w_fnGetOrders4Isoft()')
-//            ->select("Nagid", "LinId", "Data", "Rd", "DataSprz", "Logo", "LogoH", "Priorytet", "Status", "GotowyProjekt", "GrafikaCzasPierwotny", "GrafikaCzasWtorny", "GrawerniaCzas","SymKar")
-            ->where('Nagid', '>=', env('TASK_START_ID', 1))
-            ->where('Nagid', '>=', $softlab_max_id)
-            ->limit(1)
             ->get();
 
-        dd($tasks);
+//        dd($tasks);
 
+        echo "<pre>";
+        print_r($tasks);exit();
 //        $this->saveImage($tasks[0]->i)
     }
 
