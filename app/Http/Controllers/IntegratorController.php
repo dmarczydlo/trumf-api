@@ -3,19 +3,20 @@
 namespace App\Http\Controllers;
 
 use App\Task;
-use Illuminate\Http\Request;
-use App\Http\Requests;
 use DB;
 use File;
-use Hash;
-use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Storage;
+use App\Hash;
 use App\TMP;
-use PDO;
+
 
 class IntegratorController extends Controller
 {
 
+    /**
+     * function to translate tryumf col name to my col name
+     * @param $name_from_sql
+     * @return mixed
+     */
     function translateData($name_from_sql)
     {
 
@@ -34,14 +35,13 @@ class IntegratorController extends Controller
             'GotowyProjekt' => 'done',
             'GrafikaCzasPierwotny' => 'graphic_time',
             'GrawerniaCzas' => 'graver_time',
-            'LinId' => 'tryumf_tmp_id'
-
-
+            'Linid' => 'line_id'
         ];
 
         return $table_tanslations[$name_from_sql];
     }
 
+    //TODO Function to save image
     function saveImage($image_string, $path_img, $id = null)
     {
 
@@ -65,57 +65,99 @@ class IntegratorController extends Controller
             echo 'An error occurred.';
     }
 
+
+    /**Function to update row or create
+     * @param $rows
+     * @return bool
+     */
+    function addOrUpdateRows($rows)
+    {
+
+        if (empty($rows)) {
+            return false;
+        }
+
+
+        foreach ($rows as $row) {
+            $renameRow = $this->renameHelper($row);
+            $conditions = ['order_number' => $renameRow['order_number'], 'line_id' => $renameRow['line_id']];
+            Task::updateOrCreate($conditions, $renameRow);
+            echo 'update/create ' . $renameRow['order_number'] . ' ' . $renameRow['line_id'] . ' <br/>';
+        }
+        return true;
+    }
+
+    /**Generator Hash
+     * @param $data
+     */
     function checkAndGenerateHASH($data)
     {
         $new_hash = md5(json_encode($data));
         $last_hash = DB::table('hash')->orderBy('id', 'desc')->first();
 
-        if (empty($last_hash)) {
+        if (empty($last_hash) || $last_hash->hash != $new_hash) {
+
             $whatIsNew = $this->jsonCreateAndMerge($data);
-            dd($whatIsNew);
-        } else if ($last_hash->hash != $new_hash) {
-            $whatIsNew = $this->jsonCreateAndMerge($data);
-            dd($whatIsNew);
-            //save new hash
-            Hash::create($new_hash);
+
+            $this->addOrUpdateRows($whatIsNew);
+
+            $json_new = json_encode($data);
+            file_put_contents(env('JSON_PATH'), $json_new);
+            Hash::create(['hash' => $new_hash]);
+            echo 'done';
+        } else {
+            echo 'nothing to change';
         }
+
     }
 
-    public static function arrayDiff($new, $old)
+    /**
+     * DIFF to ARRAY
+     * @param $new
+     * @param $old
+     * @return array
+     */
+    public function arrayDiff($new, $old)
     {
         return array_map('json_decode', array_diff(array_map('json_encode', $new), array_map('json_encode', $old)));
 
     }
 
+    /**Function to create and Merge JSON
+     * @param $data
+     * @return array
+     */
     function jsonCreateAndMerge($data)
     {
         $json_new = json_encode($data);
-        $last_json_path = './db/last_db.json';
 
-        if (!File::exists($last_json_path)) {
-            //create json
-            file_put_contents($last_json_path, $json_new);
-            // all is new
+        if (!File::exists(env('JSON_PATH'))) {
             return $data;
         }
-        $last_json = file_get_contents($last_json_path);
+        $last_json = file_get_contents(env('JSON_PATH'));
         $diff = $this->arrayDiff(json_decode($json_new, true), json_decode($last_json, true));
-        //save new
-        file_put_contents($last_json_path, $json_new);
         return $diff;
     }
 
+    /**
+     * CRON FUNCTION
+     */
     function newDataChecker()
     {
 
-//        $tasks = DB::connection('sqlsrv')
-//            ->table('dbo.w_fnGetOrders4Isoft()')
-//            ->select("Nagid", "LinId", "Data", "Rd", "DataSprz", "Logo", "LogoH", "Priorytet", "Status", "GotowyProjekt", "GrafikaCzasPierwotny", "GrafikaCzasWtorny", "GrawerniaCzas", "SymKar")
-//            ->where('Nagid', '>=', env('TASK_START_ID', 1))
-//            //->where('Status', '>=', 2)
+        $tasks = DB::connection('sqlsrv')
+            ->table('dbo.w_fnGetOrders4Isoft()')
+            ->select("Nagid", "LinId", "Data", "Rd", "DataSprz", "Logo", "LogoH", "Priorytet", "Status", "GotowyProjekt", "GrafikaCzasPierwotny", "GrafikaCzasWtorny", "GrawerniaCzas", "SymKar")
+            ->where('Nagid', '>=', env('TASK_START_ID', 1))
+            //->where('Status', '>=', 2)
+            ->get();
+
+
+//TESTED DATA
+//        $tasks = DB::table('tmp_tryumf')
+//            ->select("Nagid", "Linid", "Data", "Rd", "DataSprz", "Logo", "LogoH", "Priorytet", "Status", "GotowyProjekt", "GrafikaCzasPierwotny", "GrafikaCzasWtorny", "GrawerniaCzas", "SymKar")
 //            ->get();
 
-        $tasks = DB::table('tmp_tryumf')->get();
 
         if (empty($tasks)) {
             echo 'empty data';
@@ -124,76 +166,57 @@ class IntegratorController extends Controller
         $this->checkAndGenerateHASH($tasks);
     }
 
-    function run_cron()
+    /**
+     * Function helper to rename column for import data
+     * @param $task
+     * @return array
+     */
+    function renameHelper($task)
     {
-        echo 'run';
+        if (empty($task))
+            return $task;
 
-        //get max last softlab_id
-        $softlab_max_id = DB::table('tasks')->max('order_number');
-        if (!$softlab_max_id > 0) $softlab_max_id = 1;
-
-        //status >=2 task is authorized
-        $tasks = DB::connection('sqlsrv')
-            ->table('dbo.w_fnGetOrders4Isoft()')
-            ->select("Nagid", "LinId", "Data", "Rd", "DataSprz", "Logo", "LogoH", "Priorytet", "Status", "GotowyProjekt", "GrafikaCzasPierwotny", "GrafikaCzasWtorny", "GrawerniaCzas", "SymKar")
-            ->where('Nagid', '>=', env('TASK_START_ID', 1))
-            ->where('Nagid', '>=', $softlab_max_id)
-            ->where('Status', '>=', 2)
-            ->get();
-
-        $count_added = 0;
-        if (!empty($tasks)) {
-            foreach ($tasks as $task) {
-                $count = DB::table('tasks')->where('tryumf_tmp_id', $task->LinId)->where('order_number', $task->Nagid)->count();
-                if ($count == 0) {
-                    //add new task
-                    $data_my = [];
-                    foreach ($task as $k => $v) {
-                        if ($k == 'GrafikaCzasPierwotny') {
-                            if ($v > 0) {
-                                $data_my[$this->translateData($k)] = $v * 60;
-                            } else {
-                                if ($task->GrafikaCzasWtorny > 0) {
-                                    $data_my[$this->translateData($k)] = $task->GrafikaCzasWtorny * 60;
-                                } else {
-                                    $data_my[$this->translateData($k)] = 0;
-                                }
-                            }
-                        } else if ($k == 'GrawerniaCzas') {
-                            if ($task->GrawerniaCzas === '' || $task->GrawerniaCzas <= 0) {
-                                $data_my[$this->translateData($k)] = 0;
-                            } else {
-                                $data_my[$this->translateData($k)] = $v * 60;
-                            }
-                        } else if ($k !== 'GrafikaCzasWtorny') {
-                            $data_my[$this->translateData($k)] = $v;
-                        }
-                    }
-
-                    if (!empty($data_my)) {
-                        $count_added = count($data_my);
-                        Task::create($data_my);
+        $renamedRow = [];
+        foreach ($task as $k => $v) {
+            if ($k == 'GrafikaCzasPierwotny') {
+                if ($v > 0) {
+                    $renamedRow[$this->translateData($k)] = $v * 60;
+                } else {
+                    if ($task->GrafikaCzasWtorny > 0) {
+                        $renamedRow[$this->translateData($k)] = $task->GrafikaCzasWtorny * 60;
                     } else {
-                        $count_added = 0;
+                        $renamedRow[$this->translateData($k)] = 0;
                     }
-
                 }
-
+            } else if ($k == 'GrawerniaCzas') {
+                if ($task->GrawerniaCzas === '' || $task->GrawerniaCzas <= 0) {
+                    $renamedRow[$this->translateData($k)] = 0;
+                } else {
+                    $renamedRow[$this->translateData($k)] = $v * 60;
+                }
+            } else if ($k !== 'GrafikaCzasWtorny') {
+                $renamedRow[$this->translateData($k)] = $v;
             }
         }
-        echo ' DONE Added ' . $count_added;
+        return $renamedRow;
 
     }
+
 
     /**
      * TEST FOR COPY ALL TABLE
      */
-    function test_image()
+    function dataCopyLocal()
     {
+
+        //truncate
+        $tmp = TMP::all();
+        $tmp->truncate();
         echo 'start';
         $tasks = DB::connection('sqlsrv')
             ->table('dbo.w_fnGetOrders4Isoft()')
             ->get();
+
 
         foreach ($tasks as $task) {
             TMP::create((array)$task);

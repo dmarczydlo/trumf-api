@@ -8,4 +8,6 @@ class Hash extends Model
 {
     //
     protected $table = 'hash';
+
+    protected $fillable = ['hash'];
 }

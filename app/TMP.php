@@ -10,6 +10,6 @@ class TMP extends Model
     protected $table = 'tmp_tryumf';
     public $timestamps = false;
 
-    protected $guarded = ['id'];
+    protected $guarded = [];
 
 }

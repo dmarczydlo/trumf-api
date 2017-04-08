@@ -16,7 +16,7 @@ Route::get('/', function () {
 });
 
 Route::get('run_integrator', 'IntegratorController@newDataChecker');
-Route::get('test_image', 'IntegratorController@test_image');
+Route::get('copy_local', 'IntegratorController@dataCopyLocal');
 
 Route::group(['prefix' => 'api'], function () {
     Route::post('login', 'UsersController@login');
