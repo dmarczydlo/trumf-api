@@ -24,7 +24,10 @@ class TasksController extends Controller
     //task status 7 - accepted - graver
     //task status 10 - reclamation
 
-
+    /**
+     * @param $user_id
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function read($user_id)
     {
 
@@ -40,10 +43,6 @@ class TasksController extends Controller
 
         $select_graphic = ['tasks.id as task_id', 'order_number', 'user_task.status_internal as status', 'prio', 'client', 'graphic_time as time', 'image_url', 'type', 'productID', 'min_lvl'];
         $select_graver = ['tasks.id as task_id', 'order_number', 'user_task.status_internal as status', 'prio', 'client', 'graver_time as time', 'image_url', 'type', 'productID', 'min_lvl'];
-
-        //tasks for graphic
-
-//        $subQuery =
 
 
         $graphic_tasks = DB::table('tasks')
@@ -143,6 +142,18 @@ class TasksController extends Controller
 
         //check if exist
         $data = $request->only('user_id', 'task_id', 'schedule_day');
+
+
+        $validator = Validator::make($data, [
+            'task_id' => 'required|numeric',
+            'user_id' => 'required|numeric',
+            'schedule_day' => 'required|date'
+        ]);
+
+        if ($validator->fails())
+            return response()->json(['error' => 'Brak wymaganych danych'], 402);
+
+
         $user = User::find($data['user_id']);
         if ($user->group->name == env('GRAVER_NAME', 'grawernia')) {
             $task_block = UserTask::where('task_id', $data['task_id'])->where('graver_block', 1)->count();
@@ -179,20 +190,23 @@ class TasksController extends Controller
             ->first();
 
         $limit_value = isset($limit->time) ? $limit->time : 0;
-        if ($limit_value + $task->time > env('BASIC_TIME') +env('EXTRA_TIME'))
+        if ($limit_value + $task->time > env('BASIC_TIME') + env('EXTRA_TIME'))
             return response()->json(['error' => 'Ten pracownik nie ma wystarczająco czasu w tym dniu na to zadanie'], 402);
 
         $section = $user->group->name;
-        //TODO add observe
-        $user->tasks()->attach($data['task_id'],
+        UserTask::create(
             [
                 $data_block => 1,
                 'accept' => 0,
+                'task_id' => $data['task_id'],
+                'user_id' => $data['user_id'],
                 'status_internal' => 1,
                 'schedule_day' => $data['schedule_day'],
-                'section' => $section,
-                'order_num' => 10
-            ]);
+                'section' => $section
+            ]
+        );
+
+
         return response()->json([
             'success' => true
         ]);
@@ -333,12 +347,29 @@ class TasksController extends Controller
     }
 
     /**
-     * @param $user_task_id
+     * @param Request $request
      * @return \Illuminate\Http\JsonResponse
      */
-    function removeTask($user_task_id)
+    function removeTask(Request $request)
     {
-        $user_task = UserTask::find($user_task_id);
+
+        $data = $request->only('user_id', 'task_id', 'schedule_day');
+
+        $validator = Validator::make($data, [
+            'task_id' => 'required|numeric',
+            'user_id' => 'required|numeric',
+            'schedule_day' => 'required|date'
+        ]);
+
+        if ($validator->fails())
+            return response()->json(['error' => 'Brak wymaganych danych'], 402);
+
+
+        $user_task = UserTask::where('task_id', $data['task_id'])
+            ->where('user_id', $data['user_id'])
+            ->where('schedule_day', $data['schedule_day'])
+            ->orderBy('updated_at', 'desc')->first();
+
         if ($user_task->status_internal == 2 || $user_task->status_internal == 5)
             return response()->json(['error' => 'To zadanie trwa. Musi zostać zakończone'], 402);
 
@@ -347,7 +378,7 @@ class TasksController extends Controller
         else if ($user_task->section === env('GRAVER_NAME', 'grawernia'))
             $user_task->graver_block = 0;
 
-        $user_task->user_id = -1;
+        $user_task->user_id = 0;
         $user_task->save();
         return response()->json([
             'success' => true
@@ -366,10 +397,24 @@ class TasksController extends Controller
         ]);
     }
 
-    function moveTask($user_task_id, $order_num)
+    /** Move task - change order_num
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    function moveTask(Request $request)
     {
+        $data = $request->only('user_id', 'task_id', 'schedule_day', 'order_num');
 
+        $validator = Validator::make($data, [
+            'task_id' => 'required|numeric',
+            'user_id' => 'required|numeric',
+            'schedule_day' => 'required|date',
+            'order_num' => 'required|numeric'
+        ]);
+
+        //TODO write this method
+
+        if ($validator->fails())
+            return response()->json(['error' => 'Brak wymaganych danych'], 402);
     }
-
-
 }

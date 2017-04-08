@@ -2,6 +2,9 @@
 
 namespace App\Providers;
 
+
+use App\UserTask;
+use App\Observers\UserTaskObserver;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -13,7 +16,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot()
     {
-        //
+        UserTask::observe(UserTaskObserver::class);
     }
 
     /**

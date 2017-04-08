@@ -24,7 +24,7 @@ class CreateTasksUpdate extends Migration
             $table->boolean('done')->notNullable()->default(false);
             $table->integer('graphic_time')->notNullable();
             $table->integer('graver_time')->notNullable();
-            $table->integer('min_lvl')->notNullable();
+            $table->integer('min_lvl')->nullable()->default(0);
         });
 
     }

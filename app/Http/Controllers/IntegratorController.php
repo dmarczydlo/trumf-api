@@ -145,18 +145,18 @@ class IntegratorController extends Controller
     function newDataChecker()
     {
 
-        $tasks = DB::connection('sqlsrv')
-            ->table('dbo.w_fnGetOrders4Isoft()')
-            ->select("Nagid", "LinId", "Data", "Rd", "DataSprz", "Logo", "LogoH", "Priorytet", "Status", "GotowyProjekt", "GrafikaCzasPierwotny", "GrafikaCzasWtorny", "GrawerniaCzas", "SymKar")
-            ->where('Nagid', '>=', env('TASK_START_ID', 1))
-            //->where('Status', '>=', 2)
-            ->get();
-
-
-//TESTED DATA
-//        $tasks = DB::table('tmp_tryumf')
-//            ->select("Nagid", "Linid", "Data", "Rd", "DataSprz", "Logo", "LogoH", "Priorytet", "Status", "GotowyProjekt", "GrafikaCzasPierwotny", "GrafikaCzasWtorny", "GrawerniaCzas", "SymKar")
+//        $tasks = DB::connection('sqlsrv')
+//            ->table('dbo.w_fnGetOrders4Isoft()')
+//            ->select("Nagid", "LinId", "Data", "Rd", "DataSprz", "Logo", "LogoH", "Priorytet", "Status", "GotowyProjekt", "GrafikaCzasPierwotny", "GrafikaCzasWtorny", "GrawerniaCzas", "SymKar","StTrudnosci")
+//            ->where('Nagid', '>=', env('TASK_START_ID', 1))
+//            //->where('Status', '>=', 2)
 //            ->get();
+
+
+        //TESTED DATA
+        $tasks = DB::table('tmp_tryumf')
+            ->select("Nagid", "Linid", "Data", "Rd", "DataSprz", "Logo", "LogoH", "Priorytet", "Status", "GotowyProjekt", "GrafikaCzasPierwotny", "GrafikaCzasWtorny", "GrawerniaCzas", "SymKar", "StTrudnosci")
+            ->get();
 
 
         if (empty($tasks)) {
@@ -194,9 +194,17 @@ class IntegratorController extends Controller
                 } else {
                     $renamedRow[$this->translateData($k)] = $v * 60;
                 }
+            } else if ($k == 'StTrudnosci') {
+                if ($v > 0) {
+                    $renamedRow[$this->translateData($k)] = $v;
+                } else {
+                    $renamedRow[$this->translateData($k)] = 0;
+                }
             } else if ($k !== 'GrafikaCzasWtorny') {
                 $renamedRow[$this->translateData($k)] = $v;
             }
+
+
         }
         return $renamedRow;
 

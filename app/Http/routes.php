@@ -13,6 +13,7 @@
 
 Route::get('/', function () {
     return view('welcome');
+
 });
 
 Route::get('run_integrator', 'IntegratorController@newDataChecker');
@@ -50,6 +51,6 @@ Route::group(['prefix' => 'api/task', 'middleware' => 'jwt.auth'], function () {
     Route::post('start_task', 'TasksController@startTask');
     Route::post('stop_task', 'TasksController@stopTask');
     Route::post('accept_task', 'TasksController@acceptTask');
-    Route::post('remove_task/{user_task_id}', 'TasksController@removeTask');
-    Route::post('move_task/{user_task_id}/{order_num}', 'TasksController@moveTask');
+    Route::post('remove_task', 'TasksController@removeTask');
+    Route::post('move_task', 'TasksController@moveTask');
 });
