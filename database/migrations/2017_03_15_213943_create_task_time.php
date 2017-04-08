@@ -14,8 +14,12 @@ class CreateTaskTime extends Migration
     {
         Schema::create('task_time', function (Blueprint $table) {
             $table->increments('id');
-            $table->integer('user_task_id')->unsigned()->references('id')->inTable('user_task')->onDelete('CASCADE');
-            $table->integer('task_id')->unsigned()->references('id')->inTable('tasks')->onDelete('CASCADE');
+
+            $table->unsignedInteger('user_task_id');
+            $table->unsignedInteger('task_id');
+
+            $table->foreign('user_task_id')->references('id')->on('user_task')->onDelete('cascade');
+            $table->foreign('task_id')->references('id')->on('tasks')->onDelete('cascade');
             $table->datetime('date_start')->nullable();
             $table->datetime('date_stop')->nullable();
             $table->integer('time')->nullable();

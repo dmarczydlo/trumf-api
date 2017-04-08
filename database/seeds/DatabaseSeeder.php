@@ -11,6 +11,29 @@ class DatabaseSeeder extends Seeder
      */
     public function run()
     {
+
+
+        DB::table('groups')->insert([
+            'name' => 'admin'
+        ]);
+
+        DB::table('groups')->insert([
+            'name' => 'grafika'
+        ]);
+
+        DB::table('groups')->insert([
+            'name' => 'grawernia'
+        ]);
+
+        DB::table('groups')->insert([
+            'name' => 'kierownik grafiki'
+        ]);
+
+        DB::table('groups')->insert([
+            'name' => 'kierownik grawernii'
+        ]);
+
+
         // $this->call(UsersTableSeeder::class);
 
         DB::table('users')->insert([
@@ -82,44 +105,23 @@ class DatabaseSeeder extends Seeder
 
 
 
-        DB::table('groups')->insert([
-            'name' => 'admin'
-        ]);
-
-        DB::table('groups')->insert([
-            'name' => 'grafika'
-        ]);
-
-        DB::table('groups')->insert([
-            'name' => 'grawernia'
-        ]);
-
-        DB::table('groups')->insert([
-            'name' => 'kierownik grafiki'
-        ]);
-
-        DB::table('groups')->insert([
-            'name' => 'kierownik grawernii'
-        ]);
-
-
-        $faker = Faker\Factory::create();
-        for ($i = 1; $i < 300; $i++) {
-            DB::table('tasks')->insert([
-                'name' => $faker->name,
-                'status' => $faker->numberBetween($min = 1, $max = 10),
-                'prio' => $faker->numberBetween($min = 1, $max = 10),
-                'order_number' => $faker->unique()->randomDigit,
-                'date_add' => $faker->dateTimeBetween('-2 years', '+0 days'),
-                'date_order' => $faker->dateTimeBetween('-2 years', '+0 days'),
-                'client' => $faker->company,
-                'employee' => $faker->name,
-                'done' => $faker->numberBetween($min = 0, $max = 1),
-                'graphic_time' => $faker->numberBetween($min = 100, $max = 800),
-                'graver_time' => $faker->numberBetween($min = 100, $max = 800),
-                'min_lvl' => $faker->numberBetween($min = 1, $max = 7),
-                'softlab_id' => $i
-            ]);
-        }
+//        $faker = Faker\Factory::create();
+//        for ($i = 1; $i < 300; $i++) {
+//            DB::table('tasks')->insert([
+//                'name' => $faker->name,
+//                'status' => $faker->numberBetween($min = 1, $max = 10),
+//                'prio' => $faker->numberBetween($min = 1, $max = 10),
+//                'order_number' => $faker->unique()->randomDigit,
+//                'date_add' => $faker->dateTimeBetween('-2 years', '+0 days'),
+//                'date_order' => $faker->dateTimeBetween('-2 years', '+0 days'),
+//                'client' => $faker->company,
+//                'employee' => $faker->name,
+//                'done' => $faker->numberBetween($min = 0, $max = 1),
+//                'graphic_time' => $faker->numberBetween($min = 100, $max = 800),
+//                'graver_time' => $faker->numberBetween($min = 100, $max = 800),
+//                'min_lvl' => $faker->numberBetween($min = 1, $max = 7),
+//                'softlab_id' => $i
+//            ]);
+//        }
     }
 }

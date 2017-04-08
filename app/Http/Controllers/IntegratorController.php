@@ -4,12 +4,14 @@ namespace App\Http\Controllers;
 
 use App\Task;
 use Illuminate\Http\Request;
-
 use App\Http\Requests;
 use DB;
 use File;
 use Hash;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Storage;
+use App\TMP;
+use PDO;
 
 class IntegratorController extends Controller
 {
@@ -63,7 +65,7 @@ class IntegratorController extends Controller
             echo 'An error occurred.';
     }
 
-    function checkAndgenerateHASH($data)
+    function checkAndGenerateHASH($data)
     {
         $new_hash = md5(json_encode($data));
         $last_hash = DB::table('hash')->orderBy('id', 'desc')->first();
@@ -72,24 +74,22 @@ class IntegratorController extends Controller
             $whatIsNew = $this->jsonCreateAndMerge($data);
             dd($whatIsNew);
         } else if ($last_hash->hash != $new_hash) {
-            //generate JSON
             $whatIsNew = $this->jsonCreateAndMerge($data);
-
             dd($whatIsNew);
-//            print_r($whatIsNew);
-
-
             //save new hash
-            //Hash::create($new_hash);
+            Hash::create($new_hash);
         }
+    }
 
-        return md5($data);
+    public static function arrayDiff($new, $old)
+    {
+        return array_map('json_decode', array_diff(array_map('json_encode', $new), array_map('json_encode', $old)));
+
     }
 
     function jsonCreateAndMerge($data)
     {
         $json_new = json_encode($data);
-
         $last_json_path = './db/last_db.json';
 
         if (!File::exists($last_json_path)) {
@@ -98,41 +98,30 @@ class IntegratorController extends Controller
             // all is new
             return $data;
         }
-
-        file_put_contents($last_json_path, $json_new);
         $last_json = file_get_contents($last_json_path);
-
-         $tab_a = (json_decode($last_json,true));
-         $tab_b = (json_decode($json_new,true));
-//         echo gettype($tab_a);
-//         echo gettype($tab_b);
-        $diff = array_diff($tab_a,$tab_b);
-        echo 1; exit();
-//        return 1;
-//        return array_diff(json_decode($json_new,true), json_decode($last_json,true));
-
-        //merge and find what is new
+        $diff = $this->arrayDiff(json_decode($json_new, true), json_decode($last_json, true));
+        //save new
+        file_put_contents($last_json_path, $json_new);
+        return $diff;
     }
 
     function newDataChecker()
     {
 
-        $tasks = DB::connection('sqlsrv')
-            ->table('dbo.w_fnGetOrders4Isoft()')
-            ->select("Nagid", "LinId", "Data", "Rd", "DataSprz", "Logo", "LogoH", "Priorytet", "Status", "GotowyProjekt", "GrafikaCzasPierwotny", "GrafikaCzasWtorny", "GrawerniaCzas", "SymKar")
-            ->where('Nagid', '>=', env('TASK_START_ID', 1))
-//            ->where('Status', '>=', 2)
-            ->get();
+//        $tasks = DB::connection('sqlsrv')
+//            ->table('dbo.w_fnGetOrders4Isoft()')
+//            ->select("Nagid", "LinId", "Data", "Rd", "DataSprz", "Logo", "LogoH", "Priorytet", "Status", "GotowyProjekt", "GrafikaCzasPierwotny", "GrafikaCzasWtorny", "GrawerniaCzas", "SymKar")
+//            ->where('Nagid', '>=', env('TASK_START_ID', 1))
+//            //->where('Status', '>=', 2)
+//            ->get();
 
+        $tasks = DB::table('tmp_tryumf')->get();
 
         if (empty($tasks)) {
             echo 'empty data';
             exit();
         }
-
-        $this->checkAndgenerateHASH($tasks);
-
-
+        $this->checkAndGenerateHASH($tasks);
     }
 
     function run_cron()
@@ -196,29 +185,21 @@ class IntegratorController extends Controller
 
     }
 
+    /**
+     * TEST FOR COPY ALL TABLE
+     */
     function test_image()
     {
-
         echo 'start';
         $tasks = DB::connection('sqlsrv')
             ->table('dbo.w_fnGetOrders4Isoft()')
             ->get();
 
-//        dd($tasks);
-
-        echo "<pre>";
-        print_r($tasks);
+        foreach ($tasks as $task) {
+            TMP::create((array)$task);
+        }
+        echo 'done';
         exit();
-//        $this->saveImage($tasks[0]->i)
     }
 
-    //run to check that something was changed like status
-    function updateTaskList()
-    {
-        // 1.md5 dla calej bazy -> zapisanie wartosci w mojej bazie
-        // 2. utworzenie json.tmp z ich obecnymi danymi
-        // 3. przy nowej wartosci md5 ponowne utworzenie JSON
-        // 4. zrobienie diff 2 jsono i pobranie rozminy
-        // 5. aktualizacja tylko zmienionych wartosic
-    }
 }
