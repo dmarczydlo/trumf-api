@@ -15,4 +15,9 @@ class TaskTime extends Model
 
     protected $table = 'task_time';
 
+    public function UserTask()
+    {
+        return $this->belongsTo('App\UserTask');
+    }
+
 }

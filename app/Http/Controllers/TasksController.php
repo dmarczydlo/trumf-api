@@ -439,13 +439,30 @@ class TasksController extends Controller
 
         $tasks = DB::table('user_task')
             ->join('users', 'user_task.user_id', '=', 'users.id')
-            ->join('tasks', 'user_task.task_id','=', 'tasks.id')
-            ->select('users.name', 'users.surname', 'users.avatar', 'user_task.status_internal as status', 'tasks.productID', 'tasks.order_number', 'tasks.type', 'tasks.client', DB::raw('(CASE WHEN users.group_id = 2 THEN tasks.graphic_time  ELSE tasks.graver_time  END) as time'), 'task_time.all_time')
-            ->leftJoin((DB::raw("(select SUM(CASE WHEN date_stop != null THEN time ELSE TIME_TO_SEC(TIMEDIFF('" . date('Y-m-d H:i:s') . "', date_start)) END ) as all_time, user_task_id from task_time group by user_task_id order by id desc) as task_time")), 'user_task.id', '=', 'task_time.user_task_id')
+            ->join('tasks', 'user_task.task_id', '=', 'tasks.id')
+            ->select('users.id as user_id', 'users.name', 'users.surname', 'users.avatar', 'user_task.status_internal as status', 'tasks.productID', 'tasks.order_number', 'tasks.type', 'tasks.client', DB::raw('(CASE WHEN users.group_id = 2 THEN tasks.graphic_time  ELSE tasks.graver_time  END) as time'), 'task_time.all_time')
+            ->leftJoin((DB::raw("(select SUM(CASE WHEN date_stop IS NOT NULL THEN time ELSE TIME_TO_SEC(TIMEDIFF('" . date('Y-m-d H:i:s') . "', date_start)) END ) as all_time, user_task_id from task_time group by user_task_id order by id desc) as task_time")), 'user_task.id', '=', 'task_time.user_task_id')
             ->where('schedule_day', $today)
             ->where($where_arg, $where_val)
             ->groupBy('users.id')
             ->get();
+
+
+        if (empty($tasks)) {
+            return response()->json([
+                'data' => $tasks
+            ]);
+        }
+
+        foreach ($tasks as $task) {
+            $task->maxTime = env('BASIC_TIME', 20700);
+            //get all time
+            $task_time = TaskTime::whereHas('UserTask', function ($query) use ($task) {
+                $query->where('user_id', '=', $task->user_id);
+                $query->where('schedule_day', '=', date('Y-m-d'));
+            })->sum(DB::raw("(CASE WHEN date_stop IS NOT null THEN time ELSE TIME_TO_SEC(TIMEDIFF('" . date('Y-m-d H:i:s') . "', date_start)) END)"));
+            $task->sumTime = $task_time != null ? $task_time : 0;
+        }
 
         return response()->json([
             'data' => $tasks
