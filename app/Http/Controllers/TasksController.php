@@ -98,13 +98,14 @@ class TasksController extends Controller
     public function readTasksForUserAtDay($user_id, $day)
     {
 
-        //TODO add logic if employee realize task to fast to scrool task - dodać nowe taski z dnia nastepnego
-
+        $select = ['min_lvl', 'user_id', 'order_number', 'user_task.status_internal as status', 'prio', 'client', 'done', 'image_url', 'type', 'productID'];
         $user = User::find($user_id);
         if ($user->group->name == env('GRAPHIC_NAME')) {
-            $select = ['min_lvl', 'user_id', 'order_number', 'user_task.status_internal as status', 'prio', 'client', 'done', 'graphic_time as time', 'image_url', 'type', 'productID'];
+            $select[] = 'graphic_time as time';
         } else if ($user->group->name == env('GRAVER_NAME')) {
-            $select = ['min_lvl', 'user_id', 'order_number', 'user_task.status_internal as status', 'prio', 'client', 'done', 'graver_time as time', 'image_url', 'type', 'productID'];
+            $select[] = 'graver_time as time';
+            $select[] = 'graphic_time as check_time';
+
         }
 
         $user_task = [DB::raw('user_task.id AS user_task_id'), 'user_task.task_id', 'user_task.status_internal', 'user_task.schedule_day', 'user_task.accept', 'user_task.section', 'user_task.order_num', DB::raw('SUM(task_time.time) as sum_time')];
@@ -121,8 +122,25 @@ class TasksController extends Controller
             ->groupBy('user_task.task_id')
             ->get();
 
+        //check that graphic done
+        if ($user->group->name == env('GRAVER_NAME')) {
+            foreach ($tasks as $task) {
+                if ($task->check_time > 0) {
+                    $uTask = UserTask::where('task_id', $task->task_id)->orderBy('id', 'desc')
+                        ->select('accept')
+                        ->first();
+                    if ($uTask->accept > 0)
+                        $task->graphic_block = false;
+                    else
+                        $task->graphic_block = true;
+                } else
+                    $task->graphic_block = false;
+            }
+        }
+
 
         return response()->json([
+            'empty' => empty($tasks),
             'tasks' => $tasks
         ]);
 
