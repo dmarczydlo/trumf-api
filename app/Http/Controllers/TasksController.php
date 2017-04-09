@@ -108,7 +108,10 @@ class TasksController extends Controller
 
         }
 
-        $user_task = [DB::raw('user_task.id AS user_task_id'), 'user_task.task_id', 'user_task.status_internal', 'user_task.schedule_day', 'user_task.accept', 'user_task.section', 'user_task.order_num', DB::raw('SUM(task_time.time) as sum_time')];
+        $user_task = [DB::raw('user_task.id AS user_task_id'), 'user_task.task_id', 'user_task.status_internal', 'user_task.schedule_day', 'user_task.accept', 'user_task.section', 'user_task.order_num',
+            DB::raw("SUM(CASE WHEN date_stop IS NOT NULL THEN time ELSE TIME_TO_SEC(TIMEDIFF('" . date('Y-m-d H:i:s') . "', date_start)) END) as sum_time"),
+            DB::raw("SUM(CASE WHEN date_stop IS NOT NULL THEN 1 ELSE 0 END) as running")
+        ];
         $select = array_merge($select, $user_task);
 
 
@@ -247,11 +250,26 @@ class TasksController extends Controller
         if ($validator->fails())
             return response()->json(['error' => 'Brak wymaganych danych'], 402);
 
+
         $data['date_start'] = date('Y-m-d H:i:s');
-        $user_task = DB::table('user_task')
-            ->select('user_id')
-            ->where('id', $data['user_task_id'])
-            ->first();
+        $user_task = UserTask::find($data['user_task_id']);
+
+
+        $times = TaskTime::whereHas('UserTask', function ($query) use ($user_task) {
+            $query->where('user_id', '=', $user_task->user_id);
+            $query->where('date_stop', '=', null);
+        })->get();
+
+        //check that sth is running then STOP
+        if (!empty($times)) {
+            foreach ($times as $time) {
+                $stop = date('Y-m-d H:i:s');
+                $time->date_stop = $stop;
+                $time->time = strtotime($stop) - strtotime($time->date_start);
+                $time->save();
+            }
+        }
+
 
         $now = date('Y-m-d');
         $limit = DB::table('task_time')
@@ -304,38 +322,38 @@ class TasksController extends Controller
             return response()->json(['error' => 'Brak wymaganych danych'], 402);
 
         $data_stop = date('Y-m-d H:i:s');
-        $task = TaskTime::find($data['id']);
 
-        if (!$task)
-            return response()->json(['error' => 'Zadanie nie istnieje'], 402);
+        $user_task = UserTask::find($data['id']);
+        $task_time = TaskTime::whereHas('UserTask', function ($query) use ($user_task) {
+            $query->where('user_task_id', '=', $user_task->id);
+            $query->where('date_stop', '=', null);
+        })->first();
 
-        $data_task = $data;
-        $data_task['date_stop'] = $data_stop;
-        $data_task['time'] = strtotime($data_stop) - strtotime($task->date_start);
+        //check that sth is running then STOP
 
-        $id = $data['id'];
-        $task_time = TaskTime::updateOrCreate(['id' => $id], $data_task);
+        if (empty($task_time))
+            return response()->json(['error' => 'Problem z zadaniem'], 402);
+
+        $task_time->date_stop = $data_stop;
+        $task_time->time = strtotime($data_stop) - strtotime($task_time->date_start);
         $task_time->save();
 
-        $userTask = UserTask::find($task->user_task_id);
+        if ($user_task->section === env('GRAPHIC_NAME', 'grafika'))
+            $user_task->status_internal = 3;
+        else if ($user_task->section === env('GRAVER_NAME', 'grawernia'))
+            $user_task->status_internal = 6;
 
-        if ($userTask->section === env('GRAPHIC_NAME', 'grafika'))
-            $userTask->status_internal = 3;
-        else if ($userTask->section === env('GRAVER_NAME', 'grawernia'))
-            $userTask->status_internal = 6;
+        $user_task->save();
 
-        $userTask->save();
-
-        return response()->json([
-            'time' => $task_time->time
-        ]);
+        return response()->json(['time' => $task_time->time]);
     }
 
     /**
      * @param Request $request
      * @return \Illuminate\Http\JsonResponse
      */
-    public function acceptTask(Request $request)
+    public
+    function acceptTask(Request $request)
     {
         //id - task_time_id
         $data = $request->only('id');

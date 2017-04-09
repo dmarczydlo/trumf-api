@@ -14,4 +14,9 @@ class UserTask extends Model
     {
         return $this->belongsTo('App\User');
     }
+
+    public function tasksTime()
+    {
+        return $this->hasMany('App\TaskTime','user_task_id','id');
+    }
 }
