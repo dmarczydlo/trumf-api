@@ -108,16 +108,14 @@ class TasksController extends Controller
 
         }
 
-        $user_task = [DB::raw('user_task.id AS user_task_id'), 'user_task.task_id', 'user_task.status_internal', 'user_task.schedule_day', 'user_task.accept', 'user_task.section', 'user_task.order_num',
-            DB::raw("SUM(CASE WHEN date_stop IS NOT NULL THEN time ELSE TIME_TO_SEC(TIMEDIFF('" . date('Y-m-d H:i:s') . "', date_start)) END) as sum_time"),
-            DB::raw("SUM(CASE WHEN date_stop IS NOT NULL THEN 1 ELSE 0 END) as running")
-        ];
+        $user_task = [DB::raw('user_task.id AS user_task_id'), 'user_task.task_id', 'user_task.status_internal', 'user_task.schedule_day', 'user_task.accept', 'user_task.section', 'user_task.order_num', 'sum_time', 'running'];
         $select = array_merge($select, $user_task);
 
 
         $tasks = DB::table('tasks')
             ->select($select)
             ->join('user_task', 'tasks.id', '=', 'user_task.task_id')
+            ->leftJoin((DB::raw("(select SUM(CASE WHEN date_stop IS NULL THEN 1 ELSE 0 END) as running, SUM(CASE WHEN date_stop IS NOT NULL THEN time ELSE TIME_TO_SEC(TIMEDIFF('" . date('Y-m-d H:i:s') . "', date_start)) END ) as sum_time, user_task_id from task_time group by user_task_id order by id desc) as task_time")), 'user_task.id', '=', 'task_time.user_task_id')
             ->leftJoin('task_time', 'tasks.id', '=', 'task_time.task_id')
             ->where('user_id', $user_id)
             ->where('user_task.schedule_day', $day)
@@ -465,8 +463,8 @@ class TasksController extends Controller
 
         if ($group_id == 1) {
 
-            $where_arg = '1';
-            $where_val = '1';
+            $where_arg = 'schedule_day';
+            $where_val = $today;
         } else {
             $where_arg = 'users.group_id';
             $where_val = $group_id;
