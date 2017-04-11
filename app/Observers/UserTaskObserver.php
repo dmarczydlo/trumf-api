@@ -20,6 +20,7 @@ class UserTaskObserver
 
         $orderMax = UserTask::where('user_id', $userTask->user_id)
             ->where('schedule_day', $userTask->schedule_day)
+            ->where('status_internal', '<', 20)
             ->max('order_num');
         if ($orderMax > 0) {
             $orderMax++;
@@ -44,20 +45,23 @@ class UserTaskObserver
     {
 
         //remove this task
-        if ($userTask->user_id === 0) {
+        if ($userTask->status_internal === 20) {
             $tasks = UserTask::where('user_id', $userTask->user_id)
                 ->where('schedule_day', $userTask->schedule_day)
                 ->where('order_num', '>', $userTask->order_num)
                 ->get();
 
-
+            $dispatcher = UserTask::getEventDispatcher();
+            UserTask::unsetEventDispatcher();
             foreach ($tasks as $task) {
 
-//                $task->order_num--;
-//                $task->save();
+                $task->order_num--;
+                $task->save();
             }
+            UserTask::setEventDispatcher($dispatcher);
 
-
+            $userTask->order_num = 0;
+            return $userTask;
         }
 
         if ($userTask->accept == 1) {

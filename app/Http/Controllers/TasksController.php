@@ -64,6 +64,7 @@ class TasksController extends Controller
             })
             ->groupBy('tasks.id')
             ->orderBy('user_task.graphic_block', 'desc')
+            ->orderBy('date_order', 'asc')
             ->orderBy('prio', 'desc')
             ->get();
 
@@ -105,7 +106,7 @@ class TasksController extends Controller
         $tasks = UserTask::with('task')->where('user_id', $user_id)
             ->where('schedule_day', $day)
             ->where('accept', 0)
-            ->where('status_internal','<',20)
+            ->where('status_internal', '<', 20)
             ->orderBy('order_num')
             ->get();
 
