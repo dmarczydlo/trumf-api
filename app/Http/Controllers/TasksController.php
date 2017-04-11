@@ -45,8 +45,8 @@ class TasksController extends Controller
     public function readAllNewTask()
     {
 
-        $select_graphic = ['tasks.id as task_id', 'order_number', 'user_task.status_internal as status', 'prio', 'client', 'graphic_time as time', 'image_url', 'type', 'productID', 'min_lvl'];
-        $select_graver = ['tasks.id as task_id', 'order_number', 'user_task.status_internal as status', 'prio', 'client', 'graver_time as time', 'image_url', 'type', 'productID', 'min_lvl'];
+        $select_graphic = ['tasks.id as task_id', 'order_number','date_order as date', 'user_task.status_internal as status', 'prio', 'client', 'graphic_time as time', 'image_url', 'type', 'productID', 'min_lvl'];
+        $select_graver = ['tasks.id as task_id', 'order_number', 'date_order as date' ,'user_task.status_internal as status', 'prio', 'client', 'graver_time as time', 'image_url', 'type', 'productID', 'min_lvl'];
 
 
         $graphic_tasks = DB::table('tasks')

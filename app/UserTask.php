@@ -96,7 +96,7 @@ class UserTask extends Model
             'order_number' => $this->task->order_number,
             'status' => $this->task->status,
             'prio' => $this->task->prio,
-            'cilent' => $this->task->client,
+            'client' => $this->task->client,
             'done' => $this->task->done,
             'image_url' => $this->task->image_url,
             'type' => $this->task->type,
@@ -111,7 +111,8 @@ class UserTask extends Model
             'order_num' => $this->order_num,
             'sum_time' => $this->sum_time,
             'running' => $this->running,
-            'status_internal' => $this->status_internal
+            'status_internal' => $this->status_internal,
+            'date' => $this->task->date_order
         ];
     }
 
