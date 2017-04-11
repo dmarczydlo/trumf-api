@@ -119,7 +119,7 @@ class UserTask extends Model
     {
         return [
             'time' => $this->time,
-            'work_time' => $this->work_time,
+            'work_time' => $this->sum_time,
             'name' => $this->user->name,
             'surname' => $this->user->surname,
             'order_number' => $this->task->order_number,
@@ -128,7 +128,9 @@ class UserTask extends Model
             'status' => $this->status_internal,
             'maxTime' => (int)env('BASIC_TIME'),
             'sumTime' => $sumTime,
-            'toDoTime' => (int)env('BASIC_TIME') - (int)$sumTime
+            'toDoTime' => (int)env('BASIC_TIME') - (int)$sumTime,
+            'avatar' => $this->user->avatar,
+            'image' => $this->task->image_url
         ];
     }
 

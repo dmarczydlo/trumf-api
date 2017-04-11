@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Task;
+use App\UserTask;
 use DB;
 use File;
 use App\Hash;
@@ -35,34 +36,34 @@ class IntegratorController extends Controller
             'GotowyProjekt' => 'done',
             'GrafikaCzasPierwotny' => 'graphic_time',
             'GrawerniaCzas' => 'graver_time',
-            'Linid' => 'line_id'
+            'LinId' => 'line_id',
+            'SloImage' => 'image_url'
         ];
 
         return $table_tanslations[$name_from_sql];
     }
 
-    //TODO Function to save image
-    function saveImage($image_string, $path_img, $id = null)
+    function rstr4($length)
     {
+        // uses md5 & mt_rand. Not as "random" as it could be, but it works, and its fastest from my tests
+        return str_shuffle(substr(str_repeat(md5(mt_rand()), 2 + $length / 32), 0, $length));
+    }
 
-        // $image_string = $image_string;
+    function saveImage($collection, $path_img)
+    {
+        //check is exist
+        $ex = Task::where('order_number', $collection->Nagid)
+            ->where('line_id', $collection->LinId)->first();
+        if (!$ex) {
 
-
-        $handle = fopen($_SERVER['DOCUMENT_ROOT'] . $path_img . date('ymdhis') . '.jpg', "a+");
-        if (fwrite($handle, $image_string) === FALSE) {
+            $image_string = hex2bin($collection->SloImage);
+            $image_name = date('ymdhis') . '_' . $this->rstr4(5) . '.jpg';
+            $handle = fopen($_SERVER['DOCUMENT_ROOT'] . $path_img . $image_name, "a+");
+            fwrite($handle, $image_string);
+            return $path_img . $image_name;
         }
 
-        echo 'done';
-        exit();
-
-
-//        $data = base64_decode($image_string); // decode an image
-        $im = imagecreatefromstring($image_string); // php function to create image from string
-        if ($im !== false) {
-            imagejpeg($im, $_SERVER['DOCUMENT_ROOT'] . $path_img . date('ymdhis') . '.jpg');
-            imagedestroy($im);
-        } else
-            echo 'An error occurred.';
+        return $ex->url_image;
     }
 
 
@@ -144,19 +145,20 @@ class IntegratorController extends Controller
      */
     function newDataChecker()
     {
+        $tasks = DB::connection('sqlsrv')
+            ->table('dbo.w_fnGetOrders4Isoft()')
+            ->select("Nagid", "LinId", "Data", "Rd", "DataSprz", "Logo", "LogoH", "Priorytet", "Status", "GotowyProjekt", "GrafikaCzasPierwotny", "GrafikaCzasWtorny", "GrawerniaCzas", "SymKar", "StTrudnosci", 'SloImage')
+            ->where('Nagid', '>=', env('TASK_START_ID', 1))
+            ->get();
 
-//        $tasks = DB::connection('sqlsrv')
-//            ->table('dbo.w_fnGetOrders4Isoft()')
-//            ->select("Nagid", "LinId", "Data", "Rd", "DataSprz", "Logo", "LogoH", "Priorytet", "Status", "GotowyProjekt", "GrafikaCzasPierwotny", "GrafikaCzasWtorny", "GrawerniaCzas", "SymKar","StTrudnosci")
-//            ->where('Nagid', '>=', env('TASK_START_ID', 1))
-//            //->where('Status', '>=', 2)
-//            ->get();
-
+        foreach ($tasks as $kev => $val) {
+            $tasks[$kev]->SloImage = $this->saveImage($val, '/images/');
+        }
 
         //TESTED DATA
-        $tasks = DB::table('tmp_tryumf')
-            ->select("Nagid", "Linid", "Data", "Rd", "DataSprz", "Logo", "LogoH", "Priorytet", "Status", "GotowyProjekt", "GrafikaCzasPierwotny", "GrafikaCzasWtorny", "GrawerniaCzas", "SymKar", "StTrudnosci")
-            ->get();
+//        $tasks = DB::table('tmp_tryumf')
+//            ->select("Nagid", "Linid", "Data", "Rd", "DataSprz", "Logo", "LogoH", "Priorytet", "Status", "GotowyProjekt", "GrafikaCzasPierwotny", "GrafikaCzasWtorny", "GrawerniaCzas", "SymKar", "StTrudnosci")
+//            ->get();
 
 
         if (empty($tasks)) {
