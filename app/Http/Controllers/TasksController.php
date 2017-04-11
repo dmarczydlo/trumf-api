@@ -42,11 +42,12 @@ class TasksController extends Controller
     /**
      * @return \Illuminate\Http\JsonResponse
      */
+    //TODO refactoring
     public function readAllNewTask()
     {
 
-        $select_graphic = ['tasks.id as task_id', 'order_number','date_order as date', 'user_task.status_internal as status', 'prio', 'client', 'graphic_time as time', 'image_url', 'type', 'productID', 'min_lvl'];
-        $select_graver = ['tasks.id as task_id', 'order_number', 'date_order as date' ,'user_task.status_internal as status', 'prio', 'client', 'graver_time as time', 'image_url', 'type', 'productID', 'min_lvl'];
+        $select_graphic = ['tasks.id as task_id', 'order_number', 'date_order as date', 'user_task.status_internal as status', 'prio', 'client', 'graphic_time as time', 'image_url', 'type', 'productID', 'min_lvl'];
+        $select_graver = ['tasks.id as task_id', 'order_number', 'date_order as date', 'user_task.status_internal as status', 'prio', 'client', 'graver_time as time', 'image_url', 'type', 'productID', 'min_lvl'];
 
 
         $graphic_tasks = DB::table('tasks')
@@ -336,13 +337,19 @@ class TasksController extends Controller
         $data = $request->only('user_task_id', 'order_num');
 
         $validator = Validator::make($data, [
-            'user_task_id' => 'required|numeric'
+            'user_task_id' => 'required|numeric',
+            'order_num' => 'required|numeric'
         ]);
 
-        //TODO write this method
 
         if ($validator->fails())
             return response()->json(['error' => 'Brak wymaganych danych'], 402);
+
+        $movedTask = UserTask::find($data['user_task_id']);
+        $movedTask->moveTask($data['order_num']);
+        $movedTask->save();
+
+        return response()->json(['success' => true]);
     }
 
     function getEmployeeTasksStatus($group_id)

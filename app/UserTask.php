@@ -84,6 +84,34 @@ class UserTask extends Model
         }
     }
 
+    public function moveTask($new_position)
+    {
+
+        //elements > new posiotion
+        $tasks_up = UserTask::where('user_id', $this->user_id)
+            ->where('schedule_day', $this->schedule_day)
+            ->where('order_num', '>=', $new_position)
+            ->get();
+
+        foreach ($tasks_up as $task) {
+            $task->order_num++;
+            $task->save();
+        }
+
+        $tasks_down = UserTask::where('user_id', $this->user_id)
+            ->where('schedule_day', $this->schedule_day)
+            ->where('order_num', '>', $this->order_num)
+            ->where('order_num', '<', $this->order_num)
+            ->get();
+
+        foreach ($tasks_down as $task) {
+            $task->order_num--;
+            $task->save();
+        }
+
+        $this->order_num = $new_position;
+    }
+
     /** Output serialize
      * @return array
      */

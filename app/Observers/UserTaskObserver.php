@@ -64,8 +64,11 @@ class UserTaskObserver
             return $userTask;
         }
 
+        //accept
         if ($userTask->accept == 1) {
-            //accept
+
+            //TODO check free time << task tommorow
+
         }
 
     }
