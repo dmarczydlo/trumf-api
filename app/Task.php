@@ -9,8 +9,9 @@ class Task extends Model
     protected $guarded = array();  // Important
     public $timestamps = false;
 
-    public function users()
+    public function user_task()
     {
-        return $this->belongsToMany('App\User');
+        return $this->haveMany('App\UserTask');
     }
+
 }

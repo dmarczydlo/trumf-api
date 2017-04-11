@@ -17,14 +17,16 @@ class CreateUserTasks extends Migration
 
             $table->unsignedInteger('user_id');
             $table->unsignedInteger('task_id');
-//            $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
+            $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
             $table->foreign('task_id')->references('id')->on('tasks')->onDelete('cascade');
-
             $table->integer('status')->notNullable();
             $table->integer('accept')->default(0)->notNullable();
             $table->date('schedule_day')->notNullable();
             $table->string('section', 20)->notNullable();
             $table->integer('order_num')->notNullable();
+            $table->integer('work_time')->default(0)->nullable();
+            $table->timestamp('date_start')->nullable();
+
 
         });
     }

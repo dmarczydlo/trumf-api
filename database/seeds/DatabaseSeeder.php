@@ -42,7 +42,8 @@ class DatabaseSeeder extends Seeder
             'group_id' => 1,
             'name' => 'Jan',
             'surname' => 'Nowak',
-            'level' => 5
+            'level' => 5,
+            'avatar'=>'m3.png'
         ]);
 
 
@@ -52,7 +53,8 @@ class DatabaseSeeder extends Seeder
             'group_id' => 3,
             'name' => 'Jan-Grawer',
             'surname' => 'Nowak',
-            'level' => 5
+            'level' => 5,
+            'avatar'=>'m2.png'
         ]);
 
         DB::table('users')->insert([
@@ -71,7 +73,8 @@ class DatabaseSeeder extends Seeder
             'group_id' => 2,
             'name' => 'Krystyna-Grafik',
             'surname' => 'Baran',
-            'level' => 8
+            'level' => 8,
+            'avatar'=>'f2.png'
         ]);
 
         DB::table('users')->insert([
@@ -80,7 +83,8 @@ class DatabaseSeeder extends Seeder
             'group_id' => 2,
             'name' => 'Synek-Grafik',
             'surname' => 'Szefa',
-            'level' => 2
+            'level' => 2,
+            'avatar'=>'m2.png'
         ]);
 
 
@@ -90,7 +94,8 @@ class DatabaseSeeder extends Seeder
             'group_id' => 4,
             'name' => 'Kierownik',
             'surname' => 'Grafiki',
-            'level' => 5
+            'level' => 5,
+            'avatar'=>'m1.png'
         ]);
 
         DB::table('users')->insert([
@@ -99,7 +104,8 @@ class DatabaseSeeder extends Seeder
             'group_id' => 5,
             'name' => 'Kierownik',
             'surname' => 'Grawernii',
-            'level' => 5
+            'level' => 5,
+            'avatar'=>'m2.png'
         ]);
 
 

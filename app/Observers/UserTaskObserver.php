@@ -25,6 +25,17 @@ class UserTaskObserver
             $orderMax++;
         } else $orderMax = 1;
 
+
+        //block group
+        if ($userTask->user->group_id == 2) {
+            $userTask->graphic_block = 1;
+        } else if ($userTask->user->group_id == 3) {
+            $userTask->graver_block = 1;
+        }
+
+        //added section
+        $userTask->section = $userTask->user->group->name;
+
         $userTask->order_num = $orderMax;
         return $userTask;
     }
