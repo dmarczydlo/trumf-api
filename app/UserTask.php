@@ -163,6 +163,18 @@ class UserTask extends Model
         ];
     }
 
+    function serializeAccept()
+    {
+        return [
+            'work_time' => $this->sum_time,
+            'user' => $this->user->name . ' ' . $this->user->surname,
+            'order_number' => $this->task->order_number,
+            'type' => $this->task->type,
+            'image' => $this->task->image_url,
+            'date' => $this->task->date_order
+        ];
+    }
+
     /**
      * ===================ACCESSORS===============
      */

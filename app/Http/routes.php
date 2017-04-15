@@ -28,7 +28,9 @@ Route::group(['prefix' => 'api', 'middleware' => ['jwt.auth', 'jwt.refresh']], f
     Route::get('logout', 'UsersController@logout');
 });
 
-
+/**
+ * User controller ROUTE
+ */
 Route::group(['prefix' => 'api/user', 'middleware' => 'jwt.auth'], function () {
 
     Route::get('get/{user_id}', 'UsersController@read');
@@ -41,7 +43,9 @@ Route::group(['prefix' => 'api/user', 'middleware' => 'jwt.auth'], function () {
 
 });
 
-
+/**
+ * Task's controller ROUTE
+ */
 Route::group(['prefix' => 'api/task', 'middleware' => 'jwt.auth'], function () {
     Route::get('get/{task_id}', 'TasksController@read');
     Route::get('all', 'TasksController@readAllTasks');
@@ -53,6 +57,6 @@ Route::group(['prefix' => 'api/task', 'middleware' => 'jwt.auth'], function () {
     Route::post('accept_task', 'TasksController@acceptTask');
     Route::post('remove_task', 'TasksController@removeTask');
     Route::post('move_task', 'TasksController@moveTask');
-    Route::get('online_data/{group_id}', 'TasksController@getEmployeeTasksStatus');
-
+    Route::get('online_data', 'TasksController@getEmployeeTasksStatus');
+    Route::get('accepted_tasks', 'TasksController@getAcceptedTaskList');
 });

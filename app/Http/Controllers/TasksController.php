@@ -11,6 +11,7 @@ use Validator;
 use App\Http\Requests;
 use Illuminate\Support\Facades\DB;
 use App;
+use Auth;
 
 class TasksController extends Controller
 {
@@ -352,13 +353,25 @@ class TasksController extends Controller
         return response()->json(['success' => true]);
     }
 
-    function getEmployeeTasksStatus($group_id)
+    /** Function to online status
+     * @return \Illuminate\Http\JsonResponse
+     */
+    function getEmployeeTasksStatus()
     {
+        $user = Auth::user();
 
-        if (!$group_id > 0)
-            return response()->json(['error' => 'Brak wymaganych danych'], 402);
-
-        $nowWorking = UserTask::where('schedule_day', date('Y-m-d'))
+        if ($user->group_id == 1) {
+            $users_id = [2, 3];
+        } else if ($user->group_id == 4) {
+            $users_id = [2];
+        } else if ($user->group_id == 5) {
+            $users_id = [3];
+        }
+        $nowWorking = UserTask::with('user')
+            ->whereHas('user', function ($query) use ($users_id) {
+                $query->whereIn('group_id', $users_id);
+            })
+            ->where('schedule_day', date('Y-m-d'))
             ->orderBy('date_start', 'desc')
             ->get()
             ->unique('user_id');
@@ -377,4 +390,37 @@ class TasksController extends Controller
             ['data' => $tasks]
         );
     }
+
+    /**
+     * Get accepted task list
+     * @return \Illuminate\Http\JsonResponse
+     */
+    function getAcceptedTaskList()
+    {
+        $user = Auth::user();
+
+        if ($user->group_id == 1) {
+            $users_id = [2, 3];
+        } else if ($user->group_id == 4) {
+            $users_id = [2];
+        } else if ($user->group_id == 5) {
+            $users_id = [3];
+        }
+
+        $tasks = UserTask::with('user')
+            ->whereHas('user', function ($query) use ($users_id) {
+                $query->whereIn('group_id', $users_id);
+            })
+            ->whereIn('status_internal', [4, 7])
+            ->where('accept', 1)
+            ->get();
+
+        $tasks = $tasks->map(function ($item) {
+            return $item->serializeAccept();
+        });
+
+        return response()->json(['tasks' => $tasks]);
+
+    }
+
 }
