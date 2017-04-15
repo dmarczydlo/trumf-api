@@ -224,6 +224,7 @@ class TasksController extends Controller
 
         //check that user can work
         $sumWorkTime = UserTask::where('user_id', $user_task->user_id)
+
             ->where('schedule_day', date('Y-m-d'))
             ->get()
             ->sum('work_time');
@@ -283,6 +284,7 @@ class TasksController extends Controller
 
         $user_task = UserTask::find($data['id']);
         $user_task->accept = 1;
+        $user_task->reclamation = 0;
         $user_task->setAcceptStatus();
         $user_task->save();
 
@@ -420,7 +422,37 @@ class TasksController extends Controller
         });
 
         return response()->json(['tasks' => $tasks]);
+    }
+
+    /**
+     * Function to get data about one task
+     * @param $task_id
+     * @return \Illuminate\Http\JsonResponse
+     */
+    function getTaskDetail($task_id)
+    {
+        if (!$task_id > 0)
+            return response()->json(['error' => 'Brak wymaganych danych'], 402);
+
+        $task = UserTask::find($task_id);
+        return response()->json(['task' => $task->serializeTaskDetail()]);
+    }
+
+    function setTaskReclamation($task_id)
+    {
+        if (!$task_id > 0)
+            return response()->json(['error' => 'Brak wymaganych danych'], 402);
+
+        $task = UserTask::find($task_id);
+        $task->reclamation = 1;
+        $task->status_internal = 1;
+        $task->accept = 0;
+        $task->schedule_day = date('Y-m-d');
+        $task->save();
+
+        return response()->json(['success' => true]);
 
     }
+
 
 }

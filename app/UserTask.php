@@ -140,7 +140,8 @@ class UserTask extends Model
             'sum_time' => $this->sum_time,
             'running' => $this->running,
             'status_internal' => $this->status_internal,
-            'date' => $this->task->date_order
+            'date' => $this->task->date_order,
+            'reclamation' => $this->reclamation
         ];
     }
 
@@ -171,7 +172,26 @@ class UserTask extends Model
             'order_number' => $this->task->order_number,
             'type' => $this->task->type,
             'image' => $this->task->image_url,
-            'date' => $this->task->date_order
+            'date' => $this->task->date_order,
+            'group' => $this->user->group->name,
+            'id' => $this->id
+        ];
+    }
+
+    function serializeTaskDetail()
+    {
+        return [
+            'type' => $this->task->type,
+            'user' => $this->user->name . ' ' . $this->user->surname,
+            'image' => $this->task->image_url,
+            'date' => $this->task->date_order,
+            'group' => $this->user->group->name,
+            'work_time' => $this->sum_time,
+            'id' => $this->id,
+            'status' => $this->status_internal,
+            'order_number' => $this->task->order_number,
+            'client' => $this->task->client,
+            'avatar' => $this->user->avatar
         ];
     }
 

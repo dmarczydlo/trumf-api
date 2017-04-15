@@ -59,4 +59,6 @@ Route::group(['prefix' => 'api/task', 'middleware' => 'jwt.auth'], function () {
     Route::post('move_task', 'TasksController@moveTask');
     Route::get('online_data', 'TasksController@getEmployeeTasksStatus');
     Route::get('accepted_tasks', 'TasksController@getAcceptedTaskList');
+    Route::get('task_detail/{task_id}', 'TasksController@getTaskDetail');
+    Route::post('task_reclamation/{task_id}','TasksController@setTaskReclamation');
 });
