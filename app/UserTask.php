@@ -87,26 +87,54 @@ class UserTask extends Model
     public function moveTask($new_position)
     {
 
-        //elements > new posiotion
-        $tasks_up = UserTask::where('user_id', $this->user_id)
-            ->where('schedule_day', $this->schedule_day)
-            ->where('order_num', '>=', $new_position)
-            ->get();
+        if ($new_position > $this->order_num) {
+            //elements > new posiotion
+            $tasks_up = UserTask::where('user_id', $this->user_id)
+                ->where('schedule_day', $this->schedule_day)
+                ->where('order_num', '>', $new_position)
+                ->get();
 
-        foreach ($tasks_up as $task) {
-            $task->order_num++;
-            $task->save();
+            foreach ($tasks_up as $task) {
+                $task->order_num++;
+                $task->save();
+            }
+
+            $tasks_down = UserTask::where('user_id', $this->user_id)
+                ->where('schedule_day', $this->schedule_day)
+                ->where('order_num', '>', $this->order_num)
+                ->where('order_num', '<=', $new_position)
+                ->get();
+
+            foreach ($tasks_down as $task) {
+                $task->order_num--;
+                $task->save();
+            }
+
+
         }
+        else {
 
-        $tasks_down = UserTask::where('user_id', $this->user_id)
-            ->where('schedule_day', $this->schedule_day)
-            ->where('order_num', '>', $this->order_num)
-            ->where('order_num', '<', $this->order_num)
-            ->get();
+            $tasks_down = UserTask::where('user_id', $this->user_id)
+                ->where('schedule_day', $this->schedule_day)
+                ->where('order_num', '>', $this->order_num)
+                ->get();
 
-        foreach ($tasks_down as $task) {
-            $task->order_num--;
-            $task->save();
+            foreach ($tasks_down as $task) {
+                $task->order_num--;
+                $task->save();
+            }
+
+
+            $tasks_up = UserTask::where('user_id', $this->user_id)
+                ->where('schedule_day', $this->schedule_day)
+                ->where('order_num', '>=', $new_position)
+                ->where('order_num', '<', $this->order_num)
+                ->get();
+
+            foreach ($tasks_up as $task) {
+                $task->order_num++;
+                $task->save();
+            }
         }
 
         $this->order_num = $new_position;
@@ -141,7 +169,8 @@ class UserTask extends Model
             'running' => $this->running,
             'status_internal' => $this->status_internal,
             'date' => $this->task->date_order,
-            'reclamation' => $this->reclamation
+            'reclamation' => $this->reclamation,
+            'eq'=>$this->task->eq
         ];
     }
 
@@ -160,7 +189,8 @@ class UserTask extends Model
             'sumTime' => $sumTime,
             'toDoTime' => (int)env('BASIC_TIME') - (int)$sumTime,
             'avatar' => $this->user->avatar,
-            'image' => $this->task->image_url
+            'image' => $this->task->image_url,
+            'eq'=>$this->task->eq
         ];
     }
 
@@ -174,7 +204,8 @@ class UserTask extends Model
             'image' => $this->task->image_url,
             'date' => $this->task->date_order,
             'group' => $this->user->group->name,
-            'id' => $this->id
+            'id' => $this->id,
+            'eq'=>$this->task->eq
         ];
     }
 
@@ -191,7 +222,8 @@ class UserTask extends Model
             'status' => $this->status_internal,
             'order_number' => $this->task->order_number,
             'client' => $this->task->client,
-            'avatar' => $this->user->avatar
+            'avatar' => $this->user->avatar,
+            'eq'=>$this->task->eq
         ];
     }
 

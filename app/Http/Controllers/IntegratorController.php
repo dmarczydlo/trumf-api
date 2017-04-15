@@ -37,7 +37,8 @@ class IntegratorController extends Controller
             'GrafikaCzasPierwotny' => 'graphic_time',
             'GrawerniaCzas' => 'graver_time',
             'LinId' => 'line_id',
-            'SloImage' => 'image_url'
+            'SloImage' => 'image_url',
+            'Ilosc' =>'eq'
         ];
 
         return $table_tanslations[$name_from_sql];
@@ -147,7 +148,7 @@ class IntegratorController extends Controller
     {
         $tasks = DB::connection('sqlsrv')
             ->table('dbo.w_fnGetOrders4Isoft()')
-            ->select("Nagid", "LinId", "Data", "Rd", "DataSprz", "Logo", "LogoH", "Priorytet", "Status", "GotowyProjekt", "GrafikaCzasPierwotny", "GrafikaCzasWtorny", "GrawerniaCzas", "SymKar", "StTrudnosci", 'SloImage')
+            ->select("Nagid", "LinId", "Data", "Rd", "DataSprz", "Logo", "LogoH", "Priorytet", "Status", "GotowyProjekt", "GrafikaCzasPierwotny", "GrafikaCzasWtorny", "GrawerniaCzas", "SymKar", "StTrudnosci", 'SloImage','Ilosc')
             ->where('Nagid', '>=', env('TASK_START_ID', 1))
             ->get();
 
