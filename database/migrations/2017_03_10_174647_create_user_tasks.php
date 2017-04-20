@@ -15,17 +15,19 @@ class CreateUserTasks extends Migration
         Schema::create('user_task', function (Blueprint $table) {
             $table->increments('id');
 
-            $table->integer('user_id')->unsigned()->references('id')->inTable('users')->onDelete('CASCADE');
-            $table->integer('task_id')->unsigned()->references('id')->inTable('tasks')->onDelete('CASCADE');
-            $table->datetime('task_start')->nullable();
-            $table->datetime('task_stop')->nullable();
+            $table->unsignedInteger('user_id');
+            $table->unsignedInteger('task_id');
+            $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
+            $table->foreign('task_id')->references('id')->on('tasks')->onDelete('cascade');
             $table->integer('status')->notNullable();
             $table->integer('accept')->default(0)->notNullable();
             $table->date('schedule_day')->notNullable();
-            //graphic, graver
             $table->string('section', 20)->notNullable();
+            $table->integer('order_num')->notNullable();
+            $table->integer('work_time')->default(0)->nullable();
+            $table->timestamp('date_start')->nullable();
 
-            $table->timestamps();
+
         });
     }
 

@@ -77,6 +77,15 @@ return [
             'prefix' => '',
             'schema' => 'public',
         ],
+        'sqlsrv' => [
+            'driver' => 'sqlsrv',
+            'host' => env('DB_SQL_HOST', 'localhost'), // Provide IP address here
+            'database' => env('DB_SQL_DATABASE', 'forge'),
+            'username' => env('DB_SQL_UERNAME', ''),
+            'password' => env('DB_SQL_PASSWORD', ''),
+            'prefix' => '',
+            'port' => env('DB_SQL_PORT','1433')
+        ]
 
     ],
 

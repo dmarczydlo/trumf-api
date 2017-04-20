@@ -3,7 +3,7 @@
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\Migrations\Migration;
 
-class CreateTasks extends Migration
+class UsersUpdateAddAvatar extends Migration
 {
     /**
      * Run the migrations.
@@ -12,11 +12,8 @@ class CreateTasks extends Migration
      */
     public function up()
     {
-        Schema::create('tasks', function (Blueprint $table) {
-            $table->increments('id');
-            $table->string('name', 20)->notNullable();
-            $table->integer('status')->nullable();
-            $table->integer('prio')->notNullable();
+        Schema::table('users', function ($table) {
+            $table->string('avatar','10')->default('f1.png')->notNullable();
         });
     }
 
@@ -27,6 +24,9 @@ class CreateTasks extends Migration
      */
     public function down()
     {
-        Schema::drop('tasks');
+        //
+        Schema::table('users', function ($table) {
+            $table->dropColumn('avatar');
+        });
     }
 }

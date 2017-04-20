@@ -45,6 +45,11 @@ class Handler extends ExceptionHandler
      */
     public function render($request, Exception $e)
     {
+        if ($this->isHttpException($e))
+        {
+            return response()->json(['error' => 'Bledne dane dla API'], 402);
+        }
+
         return parent::render($request, $e);
     }
 }

@@ -3,7 +3,7 @@
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\Migrations\Migration;
 
-class CreateTasks extends Migration
+class UpdateTableTasksAddProductName extends Migration
 {
     /**
      * Run the migrations.
@@ -12,11 +12,10 @@ class CreateTasks extends Migration
      */
     public function up()
     {
-        Schema::create('tasks', function (Blueprint $table) {
-            $table->increments('id');
-            $table->string('name', 20)->notNullable();
-            $table->integer('status')->nullable();
-            $table->integer('prio')->notNullable();
+        //
+
+        Schema::table('tasks', function ($table) {
+            $table->string('productID')->nullable();
         });
     }
 
@@ -27,6 +26,9 @@ class CreateTasks extends Migration
      */
     public function down()
     {
-        Schema::drop('tasks');
+        //
+        Schema::table('user_task', function ($table) {
+            $table->dropColumn('productID');
+        });
     }
 }

@@ -5,78 +5,146 @@ namespace App\Http\Controllers;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 
-use App\Http\Requests;
-use League\Flysystem\Exception;
 use Tymon\JWTAuth\Exceptions\JWTException;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use Tymon\JWTAuth\JWTGuard;
-use Illuminate\Support\Facades\Auth;
 use App\User;
 use Illuminate\Support\Facades\Hash;
+use Validator;
+use DB;
 
 class UsersController extends Controller
 {
-    //
 
+    /**
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function login(Request $request)
     {
 
         $creditionals = $request->only('email', 'password');
 
         try {
-            if (!$token = JWTAuth::attempt($creditionals)) {
 
-                return response()->json(['error' => 'User email or password as no correct'], 401);
+            $customClaims = ['email' => $creditionals['email']];
+            if (!$token = JWTAuth::attempt($creditionals, $customClaims)) {
+
+                return response()->json(['error' => 'Email lub hasła są nieprawidłowe'], 400);
             }
 
         } catch (JWTException $exception) {
 
-            return response()->json(['error' => 'Something was wrong'], 500);
+            return response()->json(['error' => 'Wystąpił błą'], 500);
         }
 
+        if ($token) {
+            //check user group;
+            $user = User::where('email', $creditionals['email'])->first();
 
-        return response()->json(compact('token'));
+            $output['token'] = $token;
+            $output['group'] = $user->group->name;
+        }
+
+        return response()->json($output);
     }
 
+    /**
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function logout()
     {
-//        JWTGuard::logout();
-
-
         return response()->json([
             'success' => true
         ]);
     }
 
+
+    public function updateProfile($user_id, Request $request)
+    {
+        $user_data = $request->only('password', 'avatar');
+
+        //check user exist
+        $user = User::find($user_id);
+
+        if (!empty($user)) {
+
+            if (!empty($user_data)) {
+
+                if (isset($user_data['password'])) {
+                    if (!empty($user_data['password'])) {
+                        $user_data['password'] = Hash::make($user_data['password']);
+                    } else {
+                        unset($user_data['password']);
+                    }
+                }
+
+                $user = User::updateOrCreate(['id' => $user_id], $user_data);
+                $user->save();
+
+                return response()->json([
+                    'success' => true
+                ]);
+            } else {
+                return response()->json(['error' => 'Brak wymaganych danych'], 402);
+            }
+        } else {
+            return response()->json(['error' => 'Brak użytkownika'], 402);
+        }
+
+    }
+
+
+    /**
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function create(Request $request)
     {
 
-        $user_data = $request->only('email', 'password', 'name', 'group_id', 'surname', 'level');
+        $user_data = $request->only('email', 'password', 'name', 'group_id', 'surname', 'level', 'avatar');
+
+
 
         if (!empty($user_data)) {
             try {
 
-
-//                print_r($user_data); exit();
                 $find_user = User::where('email', '=', $user_data['email'])->first();
                 if (empty($find_user)) {
                     $user_data['password'] = Hash::make($user_data['password']);
-                    $user = User::create($user_data);
+                    $validator = Validator::make($user_data, [
+                        'email' => 'required|email',
+                        'group_id' => 'required|numeric',
+                        'name' => 'required',
+                        'surname' => 'required',
+                        'level' => 'required|numeric',
 
-                    return response()->json([
-                        'user' => $user
                     ]);
+
+                    if (!$validator->fails()) {
+                        $user = User::create($user_data);
+                        return response()->json([
+                            'user' => $user
+                        ]);
+                    } else {
+                        return response()->json(['error' => 'Brak wymaganych danych'], 402);
+                    }
+
                 } else {
-                    return response()->json(['error' => 'Email is exist'], 401);
+                    return response()->json(['error' => 'Email występuje już w bazie'], 402);
                 }
             } catch (QueryException $exception) {
-                return response()->json(['error' => 'exception' . $exception->getMessage()], 401);
+                return response()->json(['error' => 'exception' . $exception->getMessage()], 402);
             }
         } else {
-            return response()->json(['error' => 'User email or password as no correct'], 401);
+            return response()->json(['error' => 'Email lub hasło są nieprawidłowe'], 402);
         }
     }
 
+    /**
+     * @param $user_id
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function delete($user_id)
     {
         if ($user_id > 0) {
@@ -95,29 +163,88 @@ class UsersController extends Controller
         ]);
     }
 
-    public function update($user_id)
+    /**
+     * @param $user_id
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function update($user_id, Request $request)
     {
-        return response()->json([
-            'action' => 'update'
+        $user_data = $request->only('email', 'password', 'name', 'group_id', 'surname', 'level', 'avatar');
+
+
+        if (isset($user_data['password'])) {
+            if (!empty($user_data['password'])) {
+                $user_data['password'] = Hash::make($user_data['password']);
+            }
+        }
+
+
+        $validator = Validator::make($user_data, [
+            'email' => 'required|email',
+            'group_id' => 'required|numeric',
+            'name' => 'required',
+            'surname' => 'required',
+            'level' => 'required|numeric',
+
         ]);
+
+        if (!$validator->fails()) {
+            foreach ($user_data as $k => $v) {
+                if (empty($v))
+                    unset($user_data[$k]);
+            }
+
+            $user = User::updateOrCreate(['id' => $user_id], $user_data);
+            $user->save();
+
+            return response()->json([
+                'user' => $user
+            ]);
+        } else {
+            return response()->json(['error' => 'Brak wymaganych danych'], 402);
+        }
     }
 
+    /**
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function getUsers()
     {
-        $users = User::all();
+
+        $users = DB::table('users')
+            ->join('groups', 'users.group_id', '=', 'groups.id')
+            ->select('users.name', 'users.surname', 'users.id', 'users.email', 'users.level', 'groups.name AS group')
+            ->get();
+
         return response()->json([
             'users' => $users
         ]);
     }
 
+    /**
+     * @param $user_id
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function read($user_id)
     {
 
         $user = User::find($user_id);
 
-
         return response()->json([
             'user' => $user
+        ]);
+    }
+
+    /**
+     * @param $group_id
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function getUserFromGroup($group_id)
+    {
+        $users = User::where('group_id', $group_id)->select('id', 'name', 'surname','level')->get();
+        return response()->json([
+            'users' => $users
         ]);
     }
 }
