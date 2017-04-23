@@ -9,7 +9,8 @@
         "laravel/framework": "5.2.*",
         "tymon/jwt-auth": "0.5.*",
         "fzaninotto/faker": "~1.4",
-        "doctrine/dbal": "v2.4.2"
+        "doctrine/dbal": "v2.4.2",
+        "maatwebsite/excel": "~2.1.0"
     },
     "require-dev": {
         "fzaninotto/faker": "~1.4",
