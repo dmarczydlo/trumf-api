@@ -111,27 +111,27 @@ class DatabaseSeeder extends Seeder
 
 
 
-        $faker = Faker\Factory::create();
-        for ($i = 1; $i < 300; $i++) {
-            DB::table('tasks')->insert([
-                'name' => $faker->name,
-                'status' => $faker->numberBetween($min = 1, $max = 10),
-                'prio' => $faker->numberBetween($min = 1, $max = 10),
-                'order_number' => $faker->unique()->randomDigit,
-                'line_id' => $faker->$faker->numberBetween($min = 100, $max = 800),
-                'date_add' => $faker->dateTimeBetween('-1 years', '+0 days'),
-                'date_order' => $faker->dateTimeBetween('-1 years', '+0 days'),
-                'client' => $faker->company,
-                'employee' => $faker->name,
-                'done' => $faker->numberBetween($min = 0, $max = 1),
-                'graphic_time' => $faker->numberBetween($min = 100, $max = 800),
-                'graver_time' => $faker->numberBetween($min = 100, $max = 800),
-                'min_lvl' => $faker->numberBetween($min = 1, $max = 5),
-                'image_url' => '',
-                'type'=>'ZO',
-                'productID'=>'875675765',
-                'eq' => $faker->numberBetween($min = 1, $max = 5)
-            ]);
-        }
+//        $faker = Faker\Factory::create();
+//        for ($i = 1; $i < 300; $i++) {
+//            DB::table('tasks')->insert([
+//                'name' => $faker->name,
+//                'status' => $faker->numberBetween($min = 1, $max = 10),
+//                'prio' => $faker->numberBetween($min = 1, $max = 10),
+//                'order_number' => $faker->unique()->randomDigit,
+//                'line_id' => $faker->$faker->numberBetween($min = 100, $max = 800),
+//                'date_add' => $faker->dateTimeBetween('-1 years', '+0 days'),
+//                'date_order' => $faker->dateTimeBetween('-1 years', '+0 days'),
+//                'client' => $faker->company,
+//                'employee' => $faker->name,
+//                'done' => $faker->numberBetween($min = 0, $max = 1),
+//                'graphic_time' => $faker->numberBetween($min = 100, $max = 800),
+//                'graver_time' => $faker->numberBetween($min = 100, $max = 800),
+//                'min_lvl' => $faker->numberBetween($min = 1, $max = 5),
+//                'image_url' => '',
+//                'type'=>'ZO',
+//                'productID'=>'875675765',
+//                'eq' => $faker->numberBetween($min = 1, $max = 5)
+//            ]);
+//        }
     }
 }
