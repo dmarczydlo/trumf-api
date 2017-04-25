@@ -30,15 +30,11 @@ class Task extends Model
             'Ilosc' => $this->eq,
             'StTrudnosci' => $this->min_lvl,
             'Rd' => $this->type,
-            'id' =>$this->id
         ];
 
         $times = ['GrawerniaCzas' => 0, 'GrafikaCzas' => 0];
 
         $user_tasks = $this->user_task;
-//        echo "<pre>";
-//        print_r($user_tasks);
-//        dd($user_tasks);
         if (!empty($user_tasks)) {
             foreach ($user_tasks as $task) {
                 if ($task->section == 'grafika')
@@ -46,7 +42,18 @@ class Task extends Model
                 else if ($task->section == 'grawernia')
                     $times['GrawerniaCzas'] += $task->work_time;
             }
+
+            if ($times['GrafikaCzas'] == 0)
+                $times['GrafikaCzas'] = $this->graphic_time;
+            if ($times['GrawerniaCzas'] == 0)
+                $times['GrawerniaCzas'] = $this->graver_time;
         }
+
+        $times['GrafikaCzas'] /= 60;
+        $times['GrawerniaCzas'] /= 60;
+
+        $times['GrafikaCzas'] = (round($times['GrafikaCzas']));
+        $times['GrawerniaCzas'] = (round($times['GrawerniaCzas']));
 
         $ret = array_merge($ret, $times);
         return $ret;
