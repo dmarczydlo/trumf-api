@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Task;
 use Illuminate\Http\Request;
-
+use Excel;
 use App\Http\Requests;
 
 class ExportController extends Controller
@@ -19,5 +19,17 @@ class ExportController extends Controller
         });
 
         //save to xlsx
+
+        Excel::create('Raport', function ($excel) use ($tasks) {
+
+            $excel->sheet('Raport', function ($sheet) use ($tasks) {
+
+                $sheet->fromArray($tasks);
+
+            });
+
+        })->export('xlsx');
+
+
     }
 }
