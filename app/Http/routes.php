@@ -18,10 +18,12 @@ Route::get('/', function () {
 
 Route::get('run_integrator', 'IntegratorController@newDataChecker');
 Route::get('copy_local', 'IntegratorController@dataCopyLocal');
-Route::get('excel_report','ExportController@exportData');
+
 
 Route::group(['prefix' => 'api'], function () {
     Route::post('login', 'UsersController@login');
+    Route::get('excel_report','ExportController@exportData');
+
 });
 
 Route::group(['prefix' => 'api', 'middleware' => ['jwt.auth', 'jwt.refresh']], function () {

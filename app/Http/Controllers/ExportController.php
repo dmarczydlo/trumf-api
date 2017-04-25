@@ -5,15 +5,14 @@ namespace App\Http\Controllers;
 use App\Task;
 use Illuminate\Http\Request;
 use Excel;
-use App\Http\Requests;
 
 class ExportController extends Controller
 {
-    //
+
     public function exportData()
     {
-        $tasks = Task::all();
 
+        $tasks = Task::all();
         $tasks = $tasks->map(function ($item) {
             return $item->exportToReport();
         });
@@ -29,7 +28,5 @@ class ExportController extends Controller
             });
 
         })->export('xlsx');
-
-
     }
 }
